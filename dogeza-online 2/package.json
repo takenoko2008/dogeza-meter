@@ -1,0 +1,13 @@
+{
+  "name": "dogeza-online",
+  "version": "1.0.0",
+  "description": "土下座メーター - ルームコードでオンライン対戦できるサーバー",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0",
+    "selfsigned": "^2.4.1"
+  }
+}

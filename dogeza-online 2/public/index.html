@@ -1,0 +1,2473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>土下座メーター - 公式誠意測定システム（オンライン対戦版）</title>
+<style>
+  :root{
+    --red:#c81e2c;
+    --red-dark:#8f1420;
+    --gold:#d4a017;
+    --ink:#241f1a;
+    --sub:#6b6459;
+    --cream:#f7f2e7;
+    --card:#ffffff;
+    --green:#3b8f5c;
+    --line:#e5ddc8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:"Hiragino Maru Gothic ProN","Yu Gothic","Hiragino Sans",sans-serif;
+    background:
+      repeating-linear-gradient(135deg, rgba(200,30,44,0.04) 0 2px, transparent 2px 24px),
+      var(--cream);
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:32px 16px;
+  }
+  .app{
+    width:100%;
+    max-width:640px;
+    background:var(--card);
+    border-radius:20px;
+    border:3px solid var(--red);
+    box-shadow:0 16px 40px rgba(0,0,0,.15);
+    overflow:hidden;
+    position:relative;
+  }
+  .confetti-piece{
+    position:absolute;
+    top:-20px;
+    width:8px;height:14px;
+    opacity:.9;
+    animation:confettiFall linear forwards;
+  }
+  @keyframes confettiFall{
+    to{ transform:translateY(720px) rotate(540deg); opacity:0; }
+  }
+  header{
+    background:var(--red);
+    color:#fff;
+    padding:18px 22px;
+    text-align:center;
+    position:relative;
+  }
+  .badge{
+    display:inline-block;
+    font-size:11px;
+    background:var(--gold);
+    color:#3a2a00;
+    padding:3px 10px;
+    border-radius:20px;
+    font-weight:700;
+    margin-bottom:8px;
+    letter-spacing:.5px;
+  }
+  header h1{
+    margin:0;
+    font-size:24px;
+    font-weight:800;
+    letter-spacing:1px;
+  }
+  header p{
+    margin:6px 0 0;
+    font-size:12px;
+    opacity:.9;
+  }
+  #bgmToggle{
+    position:absolute;
+    top:10px; right:12px;
+    width:32px; height:32px;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,.7);
+    background:rgba(0,0,0,.15);
+    color:#fff;
+    font-size:15px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  #bgmToggle.muted{opacity:.55;}
+  .panel{display:none;padding:22px;}
+  .panel.active{display:block;}
+
+  .dogeza-banner{
+    background:var(--red-dark);
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:8px;
+    padding:22px 20px 0 24px;
+    overflow:hidden;
+    box-sizing:border-box;
+    width:100%;
+  }
+  .dogeza-banner-text{
+    color:#fff;
+    font-size:28px;
+    font-weight:800;
+    letter-spacing:1px;
+    text-shadow:0 2px 4px rgba(0,0,0,.2);
+    padding-bottom:22px;
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .dogeza-banner-img{
+    display:block;
+    width:130px;
+    max-width:34%;
+    height:auto;
+    flex:0 1 auto;
+    filter:drop-shadow(0 4px 6px rgba(0,0,0,.3));
+    pointer-events:none;
+  }
+  @media (max-width:400px){
+    .dogeza-banner-text{font-size:20px;}
+    .dogeza-banner-img{width:100px;}
+  }
+  label{
+    display:block;
+    font-size:12px;
+    color:var(--sub);
+    font-weight:700;
+    margin:14px 0 6px;
+  }
+  select, input[type=text]{
+    width:100%;
+    border:2px solid var(--line);
+    border-radius:12px;
+    padding:11px 12px;
+    font-size:14px;
+    font-family:inherit;
+    background:#fffdf6;
+    outline:none;
+  }
+  select:focus, input[type=text]:focus{border-color:var(--red);}
+  .btn{
+    display:block;
+    width:100%;
+    border:none;
+    border-radius:14px;
+    padding:14px 18px;
+    font-size:16px;
+    font-weight:800;
+    font-family:inherit;
+    cursor:pointer;
+    margin-top:14px;
+  }
+  .btn.primary{background:var(--red);color:#fff;}
+  .btn.primary:active{transform:scale(.98);}
+  .btn.primary:disabled{opacity:.4;cursor:not-allowed;}
+  .btn.ghost{background:#fff;color:var(--red);border:2px solid var(--red);}
+  .btn.small{padding:9px 12px;font-size:12px;margin-top:8px;}
+  .note{font-size:11px;color:var(--sub);margin-top:10px;line-height:1.6;}
+  .note.warn{color:var(--red-dark);font-weight:700;}
+
+  .mode-tabs{display:flex;gap:8px;margin-top:14px;}
+  .mode-tab{
+    flex:1;
+    text-align:center;
+    padding:12px 6px;
+    border-radius:12px;
+    border:2px solid var(--line);
+    background:#fff;
+    font-size:13px;
+    font-weight:700;
+    color:var(--sub);
+    cursor:pointer;
+  }
+  .mode-tab.active{border-color:var(--red);background:#fdeceb;color:var(--red-dark);}
+
+  .cam-block{display:none;margin-top:14px;}
+  .cam-block.show{display:block;}
+  .cam-mirror{
+    position:relative;
+    width:100%;
+    aspect-ratio:4/3;
+    background:#1c1a16;
+    border-radius:14px;
+    overflow:hidden;
+    transform:scaleX(-1);
+  }
+  .cam-mirror video, .cam-mirror canvas{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  .cam-pause-btn{
+    position:absolute;
+    top:8px; right:8px;
+    z-index:5;
+    width:34px; height:34px;
+    border-radius:50%;
+    border:none;
+    background:rgba(0,0,0,.45);
+    color:#fff;
+    font-size:16px;
+    cursor:pointer;
+    transform:scaleX(-1);
+  }
+  .cam-pause-btn.off{ background:rgba(200,30,44,.85); }
+  .cam-paused-overlay{
+    position:absolute;
+    inset:0;
+    z-index:4;
+    background:rgba(28,26,22,.94);
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    font-size:15px;
+    font-weight:700;
+    transform:scaleX(-1);
+    cursor:pointer;
+  }
+  .cam-paused-sub{ font-size:11px; font-weight:400; opacity:.8; }
+  .cam-status{
+    font-size:12px;
+    color:var(--sub);
+    text-align:center;
+    margin-top:8px;
+    min-height:16px;
+  }
+  .cam-countdown{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:52px;
+    font-weight:800;
+    color:#fff;
+    text-shadow:0 2px 6px rgba(0,0,0,.5);
+    transform:scaleX(-1);
+    pointer-events:none;
+    opacity:0;
+  }
+  .cam-countdown.show{opacity:1;}
+
+  .round-banner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--ink);
+    color:#fff;
+    border-radius:12px;
+    padding:10px 14px;
+    margin-bottom:12px;
+    font-size:12px;
+  }
+  .round-dots span{
+    display:inline-block;
+    width:8px;height:8px;
+    border-radius:50%;
+    background:#54493a;
+    margin-left:5px;
+  }
+  .round-dots span.done{background:var(--gold);}
+  .round-dots span.cur{background:#fff;}
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:6px;
+    margin:14px 0;
+  }
+  .stat{
+    background:var(--cream);
+    border-radius:12px;
+    padding:8px 4px;
+    text-align:center;
+  }
+  .stat .v{font-size:15px;font-weight:800;color:var(--ink);}
+  .stat .l{font-size:9px;color:var(--sub);margin-top:2px;}
+
+  .figure-wrap{
+    background:linear-gradient(#fdf8ee,#f1e9d4);
+    border:2px dashed var(--line);
+    border-radius:16px;
+    position:relative;
+    height:280px;
+    touch-action:none;
+    cursor:grab;
+    overflow:hidden;
+  }
+  .figure-wrap:active{cursor:grabbing;}
+  .figure-wrap.shake, .cam-mirror.shake, .opp-video-box.shake{animation:shake .35s;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-9px);}
+    40%{transform:translateX(7px);}
+    60%{transform:translateX(-5px);}
+    80%{transform:translateX(3px);}
+  }
+  .cam-mirror.shake{animation-name:shakeMirror;}
+  @keyframes shakeMirror{
+    0%,100%{transform:scaleX(-1) translateX(0);}
+    25%{transform:scaleX(-1) translateX(-6px);}
+    75%{transform:scaleX(-1) translateX(6px);}
+  }
+  .floor-label{
+    position:absolute;
+    left:10px;bottom:8px;
+    font-size:10px;
+    color:var(--sub);
+  }
+  .interrupt{
+    position:absolute;
+    left:10px;right:10px;top:10px;
+    background:#fff3e0;
+    border:2px solid var(--gold);
+    border-radius:12px;
+    padding:8px 10px;
+    font-size:12px;
+    font-weight:700;
+    color:#7a4a10;
+    opacity:0;
+    transform:translateY(-8px) scaleX(1);
+    transition:opacity .2s, transform .2s;
+    pointer-events:none;
+    z-index:5;
+  }
+  .interrupt.show{opacity:1;transform:translateY(0) scaleX(1);}
+  .interrupt .bar{height:5px;border-radius:3px;background:#f0d9a8;margin-top:6px;overflow:hidden;}
+  .interrupt .bar i{display:block;height:100%;background:var(--red);width:100%;}
+
+  .commentary{
+    background:var(--ink);
+    color:#fff;
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:13px;
+    line-height:1.5;
+    margin:14px 0 6px;
+    min-height:46px;
+  }
+  .commentary b{display:block;font-size:10px;opacity:.7;font-weight:400;margin-bottom:2px;}
+
+  .meter-wrap{margin:12px 0;}
+  .meter-label{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-bottom:4px;}
+  .meter-bar{height:14px;border-radius:8px;background:var(--line);overflow:hidden;position:relative;}
+  .meter-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--gold),var(--red));transition:width .05s linear;}
+  .meter-threshold{position:absolute;top:0;bottom:0;width:2px;background:#241f1a;}
+
+  .hold-wrap{margin:10px 0 4px;}
+  .hold-bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;}
+  .hold-fill{height:100%;width:0%;background:var(--gold);transition:width .08s linear;}
+  .hold-text{font-size:11px;color:var(--red-dark);font-weight:700;margin-bottom:4px;text-align:center;}
+
+  .hp-battle-row{display:flex;align-items:center;gap:8px;margin:12px 0 10px;}
+  .hp-block{flex:1;min-width:0;position:relative;}
+  .hp-block.right .hp-label{flex-direction:row-reverse;}
+  .hp-label{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:700;color:var(--red-dark);margin-bottom:3px;gap:6px;}
+  .hp-label span:last-child{font-size:10px;font-weight:800;color:var(--sub);}
+  .hp-bar-outer{height:16px;border-radius:8px;background:var(--line);overflow:hidden;border:2px solid #241f1a22;position:relative;}
+  .hp-bar-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),#8bc34a);transition:width .25s ease-out;}
+  .hp-bar-fill.low{background:linear-gradient(90deg,var(--gold),var(--red));}
+  .hp-bar-fill.critical{background:var(--red);animation:hpPulse .5s infinite alternate;}
+  .hp-vs{font-size:11px;font-weight:800;color:var(--sub);flex-shrink:0;}
+  @keyframes hpPulse{from{opacity:1;}to{opacity:.55;}}
+
+  .hp-bar-outer.hit{animation:hpHitFlash .4s ease-out;}
+  @keyframes hpHitFlash{
+    0%{box-shadow:0 0 0 3px rgba(200,30,44,.95) inset, 0 0 10px 2px rgba(200,30,44,.7);}
+    100%{box-shadow:0 0 0 0 rgba(200,30,44,0) inset, 0 0 0 0 rgba(200,30,44,0);}
+  }
+  .hp-block.shake{animation:hpShake .35s;}
+  @keyframes hpShake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-5px);}
+    40%{transform:translateX(4px);}
+    60%{transform:translateX(-3px);}
+    80%{transform:translateX(2px);}
+  }
+  .dmg-float{
+    position:absolute;
+    top:-4px;
+    font-weight:900;
+    font-size:20px;
+    color:var(--red);
+    text-shadow:0 1px 3px rgba(0,0,0,.35), 0 0 8px rgba(255,255,255,.75);
+    pointer-events:none;
+    white-space:nowrap;
+    z-index:6;
+    animation:dmgFloat .9s cubic-bezier(.2,.8,.3,1) forwards;
+  }
+  .dmg-float.dealt{ color:var(--gold); }
+  @keyframes dmgFloat{
+    0%{opacity:0; transform:translateY(2px) scale(.6);}
+    18%{opacity:1; transform:translateY(-6px) scale(1.25);}
+    100%{opacity:0; transform:translateY(-34px) scale(1);}
+  }
+  @media (max-width:400px){ .dmg-float{font-size:16px;} }
+
+  .cert{
+    text-align:center;
+    border:3px solid var(--gold);
+    border-radius:16px;
+    padding:24px 18px;
+    background:radial-gradient(circle at 50% 0%, #fff8e6, #fff);
+    position:relative;
+  }
+  .seal{
+    width:74px;height:74px;
+    border-radius:50%;
+    border:4px solid var(--red);
+    color:var(--red);
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:800;
+    margin:0 auto 10px;
+    transform:rotate(-8deg);
+  }
+  .cert h2{margin:4px 0 2px;font-size:20px;color:var(--ink);}
+  .cert .rank{font-size:30px;font-weight:800;color:var(--red);margin:10px 0 4px;}
+  .cert .score{font-size:13px;color:var(--sub);margin-bottom:14px;}
+  .cert-stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:16px;
+    text-align:left;
+  }
+  .cert-stats .item{
+    background:var(--cream);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:12px;
+    color:var(--sub);
+  }
+  .cert-stats .item b{display:block;font-size:16px;color:var(--ink);margin-top:2px;}
+  .cert-foot{font-size:10px;color:var(--sub);margin-top:6px;}
+
+  .lb-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--cream);
+    border-radius:10px;
+    padding:9px 12px;
+    margin-bottom:6px;
+  }
+  .lb-row.highlight{border:2px solid var(--gold);background:#fff8e6;}
+  .lb-rank{font-size:14px;font-weight:800;color:var(--sub);width:28px;flex-shrink:0;}
+  .lb-name{flex:1;font-size:13px;font-weight:700;color:var(--ink);}
+  .lb-sub{font-size:10px;color:var(--sub);}
+  .lb-score{font-size:16px;font-weight:800;color:var(--red);}
+  .lb-empty{font-size:12px;color:var(--sub);text-align:center;padding:20px 0;}
+
+  #oppUpperBody{
+    transition:transform .2s linear;
+    transform-box:fill-box;
+    transform-origin:60px 80px;
+  }
+
+  .video-row{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .video-col{
+    width:100%;
+    min-width:0;
+  }
+  .opp-video-box{
+    position:relative;
+    width:100%;
+    height:170px;
+    border-radius:14px;
+    overflow:hidden;
+    background:linear-gradient(#fdf8ee,#f1e9d4);
+    border:2px dashed var(--line);
+  }
+  .opp-video-label{
+    position:absolute;
+    top:6px;left:8px;right:8px;
+    display:flex;justify-content:space-between;
+    font-size:11px;color:var(--ink);
+    background:rgba(255,253,246,.85);
+    padding:2px 7px;
+    border-radius:8px;
+    z-index:2;
+    pointer-events:none;
+  }
+  #oppVideo{ transform:scaleX(-1); }
+
+  .figure-wrap.hit-ring, .cam-mirror.hit-ring, .opp-video-box.hit-ring{box-shadow:0 0 0 4px var(--red) inset;animation:ringPulse .4s ease-out;}
+  @keyframes ringPulse{
+    0%{filter:brightness(1.35);}
+    100%{filter:brightness(1);}
+  }
+
+  /* 相手にダメージを与えた時、相手の映像が赤く染まって「食らった」感じになる演出 */
+  .opp-video-box{ position:relative; }
+  .opp-video-box.hit-tint::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:rgba(200,30,44,.5);
+    mix-blend-mode:multiply;
+    animation:oppHitTint .5s ease-out;
+    pointer-events:none;
+    z-index:3;
+  }
+  @keyframes oppHitTint{
+    0%{opacity:1;}
+    100%{opacity:0;}
+  }
+  .opp-video-box.shake-light{animation:shakeLight .3s;}
+  @keyframes shakeLight{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-4px);}
+    75%{transform:translateX(4px);}
+  }
+
+  #hitFlash{
+    position:absolute;
+    inset:0;
+    background:radial-gradient(ellipse at center, rgba(200,30,44,0) 35%, rgba(200,30,44,.6) 100%);
+    opacity:0;
+    pointer-events:none;
+    z-index:40;
+  }
+  #hitFlash.show{ animation:hitFlashAnim .45s ease-out; }
+  #hitFlash.show.dealt{ background:radial-gradient(ellipse at center, rgba(212,160,23,0) 40%, rgba(212,160,23,.5) 100%); }
+  @keyframes hitFlashAnim{
+    0%{opacity:1;}
+    100%{opacity:0;}
+  }
+
+  @media (min-width:700px){
+    .video-row{
+      flex-direction:row;
+      align-items:flex-start;
+    }
+    .video-col{
+      flex:1;
+    }
+    .opp-video-box{
+      height:220px;
+    }
+  }
+
+  .room-code-display{
+    font-size:40px;
+    font-weight:800;
+    letter-spacing:8px;
+    color:var(--red);
+    margin-bottom:10px;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="app" id="certExportTarget">
+
+  <header>
+    <button id="bgmToggle" class="muted" type="button" title="BGMのON/OFF">🔇</button>
+    <div class="badge">全国土下座検定協会 公式認定システム</div>
+    <h1>土下座メーター</h1>
+    <p>カメラで本当に土下座、ルームコードで遠くの相手とも対戦できます。</p>
+  </header>
+  <audio id="bgmAudio" src="assets/bgm.mp3" loop preload="auto"></audio>
+
+  <!-- SETUP -->
+  <section class="panel active" id="panel-setup">
+    <label>あなたの名前（ランキング／対戦表示用）</label>
+    <input type="text" id="nameInput" maxlength="12" placeholder="例）たけ" />
+
+    <label>謝る相手は？</label>
+    <select id="targetSelect">
+      <option>先生</option>
+      <option>上司</option>
+      <option>親</option>
+      <option>チームメンバー</option>
+      <option>推し</option>
+      <option>審査員の皆さま</option>
+      <option>謎の存在</option>
+      <option>佐藤さん</option>
+      <option>徳永先生</option>
+    </select>
+
+    <label>謝罪理由（任意）</label>
+    <input type="text" id="reasonInput" placeholder="例）納期に間に合わなかった／寝坊した／既読スルーした" />
+
+    <label>判定方法</label>
+    <div class="cam-block show" id="camBlock">
+      <div class="cam-mirror" id="camMirror">
+        <video id="camVideo" autoplay playsinline muted></video>
+        <canvas id="camCanvas"></canvas>
+        <div class="cam-countdown" id="camCountdown"></div>
+        <button type="button" id="camPauseBtn" class="cam-pause-btn" title="カメラを一時停止する">📷</button>
+        <div id="camPausedOverlay" class="cam-paused-overlay" style="display:none;">
+          <div>📷 カメラOFF</div>
+          <div class="cam-paused-sub">タップで再開</div>
+        </div>
+      </div>
+      <div class="cam-status" id="camStatus">カメラをオンにして、判定モデルを読み込みます。</div>
+      <button class="btn ghost small" id="camStartBtn">📷 カメラを起動する</button>
+      <button class="btn primary small" id="calibrateBtn" style="display:none;">気をつけの姿勢で基準をとる</button>
+    </div>
+
+    <label>音声ボーナス（任意）</label>
+    <div class="mode-tabs">
+      <div class="mode-tab" id="voiceToggle">🎤 声に出して謝ると加点</div>
+    </div>
+    <div class="note" id="voiceNote" style="display:none;">
+      プレイ中に「申し訳ありません」「ごめんなさい」「すみません」「反省してます」「許してください」など、謝る系の言葉を声に出すたびに角度が加算されます（体で土下座する動きと同時に使えます）。ブラウザの音声認識機能を使うため、マイクの許可とインターネット接続が必要です（Chrome推奨）。<b>https://（またはlocalhost）のアドレスでのみ動作します。</b>
+    </div>
+
+    <label>対戦モード</label>
+    <div class="mode-tabs" id="battleModeTabs">
+      <div class="mode-tab active" data-mode="solo">🧍 ソロ</div>
+      <div class="mode-tab" data-mode="local">🆚 同じ端末で交代</div>
+      <div class="mode-tab" data-mode="online">🌐 オンライン対戦</div>
+    </div>
+    <div class="note" id="onlineBattleNote" style="display:none;">
+      🌐 次の画面で「⚔️ HPバトル」か「🙏 謝罪対戦（スコア比較）」のどちらで戦うか選べます。
+    </div>
+
+    <button class="btn primary" id="startBtn" disabled>測定開始</button>
+    <div class="note" id="modeNote">
+      カメラに全身の上半身（顔・肩・腰）が映るように立って、実際に体を折って土下座してください。姿勢をキープするほどスコアが伸びます。キープ中は上司から電話がかかってくるのでSpaceキーでスルーしてください。
+    </div>
+    <div class="note warn" id="camSecurityNote">
+      ※カメラ判定は localhost または https でのみ動作します。他の端末から参加する場合は、サーバー起動時にターミナルへ表示される <code>https://（このPCのLAN IP）:3443</code> の方でアクセスしてください（初回は証明書の警告が出ますが「詳細設定」→「アクセスする」で進めば大丈夫です）。
+    </div>
+  </section>
+
+  <!-- ONLINE LOBBY -->
+  <section class="panel" id="panel-online-lobby">
+    <div class="cert" style="border-color:var(--red);">
+      <div class="seal" style="transform:rotate(-6deg);">🌐</div>
+      <h2>オンライン対戦</h2>
+      <p class="note" id="onlineStatus" style="text-align:center;">ルームを作るか、コードを入力して参加してください。</p>
+    </div>
+
+    <div id="onlineChoice">
+      <label>対戦タイプ（ルームを作る人が選択）</label>
+      <div class="mode-tabs" id="onlineSubModeTabs">
+        <div class="mode-tab active" data-submode="hp">⚔️ HPバトル</div>
+        <div class="mode-tab" data-submode="score">🙏 謝罪対戦（スコア比較）</div>
+      </div>
+      <div class="note" id="onlineSubModeNote">
+        ⚔️ HPバトル：お互いHP100からスタートし、勢いよく（速く・大きく）土下座するほど相手にダメージ。先にHPが0になった方の負けです。<br>
+        🙏 謝罪対戦：ダメージなし。これまで通り3ラウンドの誠意スコアだけを比較して勝敗を決めます。
+      </div>
+      <button class="btn primary" id="createRoomBtn">ルームを作る（ホスト）</button>
+      <label>ルームコードで参加する</label>
+      <input type="text" id="joinCodeInput" maxlength="4" placeholder="例）A3K9" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-weight:800;" />
+      <button class="btn ghost" id="joinRoomBtn">参加する</button>
+      <p class="note" style="text-align:center;">※参加する場合はホストが選んだ対戦タイプが自動的に適用されます。</p>
+    </div>
+
+    <div id="onlineWaiting" style="display:none;text-align:center;">
+      <div style="font-size:12px;color:var(--sub);margin-bottom:2px;">ルームコード</div>
+      <div class="room-code-display" id="roomCodeDisplay">----</div>
+      <button class="btn ghost small" id="copyCodeBtn">コードをコピー</button>
+      <p class="note" id="waitingMsg" style="margin-top:14px;">相手の参加を待っています…</p>
+    </div>
+
+    <button class="btn ghost" id="onlineBackBtn">戻る</button>
+  </section>
+
+  <!-- BOW -->
+  <section class="panel" id="panel-bow">
+    <div class="note" id="turnLabel" style="display:none;font-weight:700;color:var(--red-dark);margin:0 0 8px;">-</div>
+
+    <div class="video-row" id="videoRow">
+      <div class="video-col" id="myVideoCol">
+        <div class="figure-wrap" id="figureWrap">
+          <svg id="figSvg" viewBox="0 0 300 280" width="100%" height="100%">
+            <line x1="150" y1="200" x2="132" y2="270" stroke="#2b2b26" stroke-width="10" stroke-linecap="round"/>
+            <line x1="150" y1="200" x2="168" y2="270" stroke="#2b2b26" stroke-width="10" stroke-linecap="round"/>
+            <line x1="20" y1="270" x2="280" y2="270" stroke="#c8bfa3" stroke-width="2" stroke-dasharray="4 4"/>
+            <g id="upperBody">
+              <line x1="150" y1="200" x2="150" y2="130" stroke="#2b2b26" stroke-width="10" stroke-linecap="round"/>
+              <line x1="150" y1="140" x2="112" y2="188" stroke="#2b2b26" stroke-width="7" stroke-linecap="round"/>
+              <line x1="150" y1="140" x2="188" y2="188" stroke="#2b2b26" stroke-width="7" stroke-linecap="round"/>
+              <circle cx="150" cy="102" r="26" fill="#f2c48d" stroke="#2b2b26" stroke-width="3"/>
+            </g>
+          </svg>
+          <div class="floor-label">床</div>
+          <div class="interrupt" id="interruptBanner">
+            📞 上司から電話です！Spaceキーでスルー！
+            <div class="bar"><i id="interruptBar"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note video-col" id="oppStatus" style="display:none;padding:0;margin-top:0;">
+        <div class="opp-video-box" id="oppVideoBox">
+          <div class="opp-video-label">
+            <span id="oppName">相手</span><span id="oppRoundText">ラウンド1/3・0°</span>
+          </div>
+          <video id="oppVideo" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;"></video>
+          <svg id="oppFigSvg" viewBox="0 0 120 120" style="position:absolute;inset:0;width:100%;height:100%;">
+            <line x1="60" y1="80" x2="52" y2="112" stroke="#2b2b26" stroke-width="5" stroke-linecap="round"/>
+            <line x1="60" y1="80" x2="68" y2="112" stroke="#2b2b26" stroke-width="5" stroke-linecap="round"/>
+            <line x1="8" y1="112" x2="112" y2="112" stroke="#c8bfa3" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <g id="oppUpperBody">
+              <line x1="60" y1="80" x2="60" y2="50" stroke="#2b2b26" stroke-width="5" stroke-linecap="round"/>
+              <line x1="60" y1="55" x2="44" y2="72" stroke="#2b2b26" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="60" y1="55" x2="76" y2="72" stroke="#2b2b26" stroke-width="3.5" stroke-linecap="round"/>
+              <circle cx="60" cy="40" r="11" fill="#f2c48d" stroke="#2b2b26" stroke-width="1.5"/>
+            </g>
+          </svg>
+          <div id="oppVideoHint" style="position:absolute;left:8px;bottom:6px;right:8px;font-size:10px;color:var(--sub);background:rgba(255,253,246,.85);padding:3px 8px;border-radius:8px;">映像接続待ち…（相手もカメラ判定モードなら自動でつながります）</div>
+        </div>
+        <div class="hold-bar" style="margin-top:6px;"><div class="hold-fill" id="oppBar" style="background:var(--sub);width:0%;"></div></div>
+      </div>
+    </div>
+
+    <div class="hp-battle-row" id="hpBattleRow" style="display:none;">
+      <div class="hp-block">
+        <div class="hp-label"><span id="hpMyName">あなた</span><span id="hpMyVal">100</span></div>
+        <div class="hp-bar-outer"><div class="hp-bar-fill" id="hpMyFill"></div></div>
+      </div>
+      <div class="hp-vs">⚔️</div>
+      <div class="hp-block right">
+        <div class="hp-label"><span id="hpOppName">相手</span><span id="hpOppVal">100</span></div>
+        <div class="hp-bar-outer"><div class="hp-bar-fill" id="hpOppFill"></div></div>
+      </div>
+    </div>
+
+    <div class="round-banner">
+      <span id="roundLabel">ラウンド 1/3：形だけでもいいので</span>
+      <span class="round-dots" id="roundDots"><span class="cur"></span><span></span><span></span></span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="v" id="statAngle">0°</div><div class="l">現在の角度</div></div>
+      <div class="stat"><div class="v" id="statFloor">80cm</div><div class="l">床との距離</div></div>
+      <div class="stat"><div class="v" id="statFail">0</div><div class="l">しくじり回数</div></div>
+      <div class="stat"><div class="v" id="statCall">0/0</div><div class="l">電話スルー</div></div>
+    </div>
+
+    <div class="meter-wrap">
+      <div class="meter-label"><span>誠意メーター</span><span id="meterPct">0%</span></div>
+      <div class="meter-bar"><div class="meter-fill" id="meterFill"></div><div class="meter-threshold" id="meterThreshold"></div></div>
+    </div>
+
+    <div class="hold-wrap">
+      <div class="hold-text" id="holdText">目標角度に到達してキープしてください</div>
+      <div class="hold-bar"><div class="hold-fill" id="holdFill"></div></div>
+    </div>
+
+    <div class="commentary"><b id="commentTarget">先生</b><span id="commentText">実際に体を折って、深く頭を下げてください。</span></div>
+    <div class="note" id="voiceStatus" style="display:none;margin-top:6px;"></div>
+  </section>
+
+  <!-- CERTIFICATE -->
+  <section class="panel" id="panel-cert">
+    <div class="cert" id="certBox">
+      <div class="seal">認</div>
+      <h2>土下座 公式認定証</h2>
+      <div class="rank" id="certRank">-</div>
+      <div class="score" id="certScore">誠意スコア -</div>
+      <div class="cert-tag" id="certTag" style="font-size:12px;color:var(--sub);margin:-8px 0 14px;">-</div>
+      <div class="cert-stats">
+        <div class="item">謝罪相手<b id="certTarget">-</b></div>
+        <div class="item">謝罪理由<b id="certReason">-</b></div>
+        <div class="item">判定方法<b id="certMode">-</b></div>
+        <div class="item">最大到達角度<b id="certAngle">-</b></div>
+        <div class="item">しくじり回数<b id="certFail">-</b></div>
+        <div class="item">電話スルー成功<b id="certCallOk">-</b></div>
+        <div class="item">推定消費カロリー<b id="certCalorie">-</b></div>
+        <div class="item">土下座偏差値<b id="certHensachi">-</b></div>
+        <div class="item">🎤 声に出した謝罪<b id="certVoice">-</b></div>
+      </div>
+      <div class="cert-judge" id="certJudge" style="background:var(--cream);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--ink);text-align:left;margin-bottom:10px;">審査員コメント：-</div>
+      <div class="cert-foot">全国土下座検定協会（非公式）認定・本証明書に法的効力はありません</div>
+    </div>
+    <button class="btn primary" id="saveBtn">証明書を画像で保存</button>
+    <button class="btn ghost" id="certLeaderboardBtn">🏆 ランキングを見る</button>
+    <button class="btn ghost" id="retryBtn">もう一度謝る</button>
+  </section>
+
+  <!-- HANDOFF (local vs mode) -->
+  <section class="panel" id="panel-handoff">
+    <div class="cert" style="border-color:var(--red);">
+      <div class="seal" style="transform:rotate(6deg);">交代</div>
+      <h2>交代してください！</h2>
+      <p class="note" id="handoffMsg" style="text-align:center;">次は挑戦者の番です。</p>
+    </div>
+    <label>挑戦者の名前</label>
+    <input type="text" id="p2NameInput" maxlength="12" placeholder="例）田中" />
+    <div id="handoffCamBlock" style="display:none;margin-top:10px;">
+      <div class="note warn">カメラモードなので、交代したら基準を取り直してください。</div>
+      <button class="btn ghost small" id="handoffCalibrateBtn">気をつけの姿勢で基準をとる</button>
+      <div class="cam-status" id="handoffCamStatus"></div>
+    </div>
+    <button class="btn primary" id="handoffStartBtn">挑戦者スタート</button>
+  </section>
+
+  <!-- VS RESULT (local & online共用) -->
+  <section class="panel" id="panel-vs-result">
+    <div class="cert">
+      <div class="seal" style="border-color:var(--gold);color:var(--gold);">VS</div>
+      <h2>対戦結果</h2>
+      <div id="vsWinnerBanner" style="font-size:19px;font-weight:800;color:var(--red);margin:10px 0 16px;">-</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div class="item" style="background:var(--cream);border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:12px;color:var(--sub);" id="vsP1Name">-</div>
+          <div style="font-size:24px;font-weight:800;color:var(--ink);" id="vsP1Score">-</div>
+          <div style="font-size:11px;color:var(--sub);" id="vsP1Rank">-</div>
+        </div>
+        <div class="item" style="background:var(--cream);border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:12px;color:var(--sub);" id="vsP2Name">-</div>
+          <div style="font-size:24px;font-weight:800;color:var(--ink);" id="vsP2Score">-</div>
+          <div style="font-size:11px;color:var(--sub);" id="vsP2Rank">-</div>
+        </div>
+      </div>
+      <div class="cert-foot">全国土下座検定協会（非公式）認定・本証明書に法的効力はありません</div>
+    </div>
+    <button class="btn primary" id="vsLeaderboardBtn">🏆 ランキングを見る</button>
+    <button class="btn ghost" id="vsRetryBtn">もう一度勝負する</button>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section class="panel" id="panel-leaderboard">
+    <h1 class="title" style="font-size:19px;margin-bottom:12px;">🏆 土下座ランキング TOP10（この端末の記録）</h1>
+    <div id="leaderboardList"></div>
+    <button class="btn ghost" id="lbBackBtn">戻る</button>
+    <button class="btn ghost small" id="lbClearBtn" style="opacity:.55;">ランキングをリセット</button>
+  </section>
+
+  <div class="dogeza-banner">
+    <div class="dogeza-banner-text">申し訳ございません</div>
+    <img src="assets/dogeza-illustration.jpeg" alt="土下座イラスト" class="dogeza-banner-img">
+  </div>
+
+  <div id="confettiLayer" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;"></div>
+  <div id="hitFlash"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+(function(){
+  var MAX_ANGLE = 130;
+  var CAM_SCALE = 1.35;
+
+  var ROUNDS = [
+    {threshold:65,  holdSec:2.1, decay:40,  label:'ラウンド 1/3：まずは軽く会釈から'},
+    {threshold:85,  holdSec:2.6, decay:65,  label:'ラウンド 2/3：もう少し本気を見せてください'},
+    {threshold:105, holdSec:3.0, decay:100, label:'ラウンド 3/3：ラストスパート、魂を込めて！'}
+  ];
+
+  var state = {
+    mode:'camera',
+    angle:0,
+    dragging:false,
+    lastY:0,
+    roundIndex:0,
+    roundMax:0,
+    roundResults:[],
+    holdMs:0,
+    failCount:0,
+    interruptOk:0,
+    interruptNg:0,
+    interruptActive:false,
+    interruptTimer:null,
+    finished:false,
+    target:'先生',
+    reason:'',
+    camReady:false,
+    camCalibrated:false,
+    camLost:0,
+    calib:{torso0:100, headOffset0:-40},
+    detector:null,
+    camLoopHandle:null,
+    battleMode:'solo',
+    vsMode:false,
+    turn:1,
+    p1:null,
+    p2:null,
+    playerName:'名無しの土下座師',
+    p2Name:'名無しの挑戦者',
+    lastResultId:null,
+    roomCode:null,
+    isHost:false,
+    opponentName:'相手',
+    opponentResult:null,
+    myResult:null,
+    lastProgressSent:0,
+    voiceEnabled:false,
+    voiceBoostCount:0,
+    voiceListening:false,
+    voiceBonus:0,
+    myHp:100,
+    oppHp:100,
+    koResult:null,
+    prevEffAngle:0,
+    pendingDamage:0,
+    onlineSubMode:'hp',
+    cameraPaused:false
+  };
+
+  function show(id){
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+    document.getElementById(id).classList.add('active');
+  }
+
+  var upperBody = document.getElementById('upperBody');
+  var meterFill = document.getElementById('meterFill');
+  var meterPct = document.getElementById('meterPct');
+  var meterThreshold = document.getElementById('meterThreshold');
+  var statAngle = document.getElementById('statAngle');
+  var statFloor = document.getElementById('statFloor');
+  var statFail = document.getElementById('statFail');
+  var statCall = document.getElementById('statCall');
+  var commentText = document.getElementById('commentText');
+  var commentTarget = document.getElementById('commentTarget');
+  var holdFill = document.getElementById('holdFill');
+  var holdText = document.getElementById('holdText');
+  var figureWrap = document.getElementById('figureWrap');
+  var roundLabel = document.getElementById('roundLabel');
+  var roundDots = document.getElementById('roundDots').children;
+  var interruptBanner = document.getElementById('interruptBanner');
+  var interruptBar = document.getElementById('interruptBar');
+  var camMirror = document.getElementById('camMirror');
+  var camVideo = document.getElementById('camVideo');
+  var camCanvas = document.getElementById('camCanvas');
+  var camCtx = camCanvas.getContext('2d');
+  var camStatus = document.getElementById('camStatus');
+  var camStartBtn = document.getElementById('camStartBtn');
+  var calibrateBtn = document.getElementById('calibrateBtn');
+  var camCountdown = document.getElementById('camCountdown');
+  var camBlock = document.getElementById('camBlock');
+  var startBtn = document.getElementById('startBtn');
+  var modeNote = document.getElementById('modeNote');
+  var turnLabel = document.getElementById('turnLabel');
+  var oppStatusEl = document.getElementById('oppStatus');
+
+  var CAM_NOTE = 'カメラに全身の上半身（顔・肩・腰）が映るように立って、実際に体を折って土下座してください。姿勢をキープするほどスコアが伸びます。キープ中は上司から電話がかかってくるのでSpaceキーでスルーしてください。';
+
+  var comments = [
+    {max:15, lines:['その程度で許されると思ってるんですか？','え、それ会釈じゃないですか？','もっと本気出せますよね？']},
+    {max:35, lines:['会釈レベルです。舐めてますか？','コンビニの店員さんの方が深いです。','校長先生の朝礼くらいの角度ですね。']},
+    {max:55, lines:['浅い！もっと深く！','まだまだ余裕ありますよね？','その角度、リハーサルですか？']},
+    {max:75, lines:['お、ちょっと本気出してきましたね…','おっ、良い感じです。もう少し。','その調子、期待してますよ。']},
+    {max:95, lines:['いい角度です。あとは体力が持つかどうか…','審査員も身を乗り出してきました。','会場がざわつき始めています。']},
+    {max:115, lines:['本気の土下座ゾーン！限界を訴えています！','足が震えていませんか？大丈夫ですか？','これはもう様式美です。']},
+    {max:9999, lines:['完璧すぎる…伝説の予感がします…！','床とキスする勢いです。','協会史上最高記録が出るかもしれません。']}
+  ];
+  var ambientLines = [
+    'ちなみに、この画面は今リアルタイムで採点されています。',
+    '審査員が小声で「これは面白い」と言っていました（多分）。',
+    '床、意外と冷たいらしいです。頑張って。',
+    '謝罪の誠意は、角度と時間の積で決まると言われています（非公式）。',
+    '隣のチームの発表も気になりますが、今は集中してください。'
+  ];
+
+  var RANK_TAGS = {
+    '伝説の土下座師':'膝に人生を乗せた者だけがたどり着ける境地。',
+    '土下座熟練者':'この安定感、社会人経験を感じます。',
+    '土下座見習い':'筋は良い。あとは覚悟の問題です。',
+    '誠意迷子':'気持ちはあるのに、体がついてきていません。',
+    '会釈マスター':'その角度、履歴書の証明写真レベルです。',
+    '反省ゼロ野郎':'協会としては再教育をおすすめします。'
+  };
+  var JUDGE_COMMENTS = [
+    '角度は十分でしたが、目に光が残っていました。',
+    '声に出して謝ると更に加点対象です（未実装）。',
+    '床との一体感、なかなかのものでした。',
+    '途中で心が折れかけていましたが、よく耐えました。',
+    '次回は靴を脱いでの受験をおすすめします。',
+    '協会内でも話題になる出来でした。'
+  ];
+
+  var audioCtx = null;
+  function beep(freq, dur, type){
+    try{
+      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      gain.gain.value = 0.15;
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      osc.stop(audioCtx.currentTime + dur + 0.02);
+    } catch(e){}
+  }
+  function fanfare(){
+    beep(523,0.14,'triangle');
+    setTimeout(function(){ beep(659,0.14,'triangle'); }, 130);
+    setTimeout(function(){ beep(784,0.28,'triangle'); }, 260);
+  }
+  function confettiBurst(){
+    var layer = document.getElementById('confettiLayer');
+    var colors = ['#c81e2c','#d4a017','#3b8f5c','#241f1a','#e8bfa0'];
+    for(var i=0;i<40;i++){
+      var piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = (Math.random()*100) + '%';
+      piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+      piece.style.animationDuration = (1.6 + Math.random()*1.4) + 's';
+      piece.style.animationDelay = (Math.random()*0.4) + 's';
+      layer.appendChild(piece);
+      (function(p){ setTimeout(function(){ p.remove(); }, 3600); })(piece);
+    }
+  }
+
+  function currentRound(){ return ROUNDS[state.roundIndex]; }
+  function clampAngle(v){ return Math.max(0, Math.min(MAX_ANGLE, v)); }
+  // 実際の判定・表示に使う角度＝物理入力(マウス/カメラ)＋声の謝罪ボーナス
+  function effectiveAngle(){ return clampAngle(state.angle + (state.voiceBonus||0)); }
+
+  /* ---------- voice apology bonus (Web Speech API) ---------- */
+  var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var voiceRecognizer = null;
+  var lastVoiceBoost = 0;
+  var voiceFatalError = false;
+  var voiceStatusEl = null;
+  // 語幹・部分一致でできるだけ多くの「謝る系」の言葉を拾う
+  var APOLOGY_PHRASES = [
+    'もうしわけ','申し訳','もうし訳','ごめん','御免','すみません','すいません','すまん','すまない',
+    '悪かった','わるかった','許して','ゆるして','お詫び','おわび','詫び','反省','失礼しました',
+    '勘弁','はんせい','失礼いたしました','謝ります','謝る','あやまり','謝罪'
+  ];
+
+  function normalizeSpeech(text){
+    if(!text) return '';
+    // 記号・空白・句読点を除去して比較しやすくする
+    return text.replace(/[\s、。・！？!?,\.]/g, '');
+  }
+
+  function supportsSpeech(){ return !!SpeechRec; }
+
+  function isSecureForSpeech(){
+    return location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  }
+
+  function setVoiceStatus(text, show){
+    if(!voiceStatusEl) voiceStatusEl = document.getElementById('voiceStatus');
+    if(!voiceStatusEl) return;
+    voiceStatusEl.textContent = text;
+    voiceStatusEl.style.display = show ? 'block' : 'none';
+  }
+
+  function checkApologyPhrase(rawText){
+    var text = normalizeSpeech(rawText);
+    if(!text) return;
+    var now = Date.now();
+    if(now - lastVoiceBoost < 900) return;
+    for(var i=0;i<APOLOGY_PHRASES.length;i++){
+      if(text.indexOf(APOLOGY_PHRASES[i]) !== -1){
+        lastVoiceBoost = now;
+        state.voiceBoostCount = (state.voiceBoostCount||0) + 1;
+        // state.angleはマウス/カメラの入力ループが毎フレーム上書きするため、
+        // 直接いじらず「声ボーナス」として別枠で積んで一定時間かけて減衰させる。
+        state.voiceBonus = Math.min(100, state.voiceBonus + 45);
+        commentText.textContent = '🎤「' + APOLOGY_PHRASES[i] + '」その謝罪、届きました！角度アップ！';
+        beep(880, 0.12, 'triangle');
+        break;
+      }
+    }
+  }
+
+  function startVoiceRecognition(){
+    if(!supportsSpeech()){
+      setVoiceStatus('🎤 このブラウザは音声認識に対応していません（Chrome推奨）', true);
+      return;
+    }
+    if(!state.voiceEnabled) return;
+    if(!isSecureForSpeech()){
+      setVoiceStatus('🎤 音声認識は https:// または localhost でのみ動作します。カメラ判定用のhttpsアドレスで開き直してください。', true);
+      return;
+    }
+    try{
+      if(voiceRecognizer){ try{ voiceRecognizer.onend = null; voiceRecognizer.stop(); }catch(e){} voiceRecognizer = null; }
+      voiceFatalError = false;
+      voiceRecognizer = new SpeechRec();
+      voiceRecognizer.lang = 'ja-JP';
+      voiceRecognizer.continuous = true;
+      voiceRecognizer.interimResults = true;
+      voiceRecognizer.maxAlternatives = 3;
+      voiceRecognizer.onstart = function(){
+        setVoiceStatus('🎤 音声認識ON - 声に出して謝ってみてください', true);
+      };
+      voiceRecognizer.onresult = function(ev){
+        for(var i=ev.resultIndex;i<ev.results.length;i++){
+          var res = ev.results[i];
+          for(var j=0;j<res.length;j++){
+            checkApologyPhrase(res[j].transcript);
+          }
+        }
+      };
+      voiceRecognizer.onerror = function(ev){
+        var err = ev && ev.error;
+        if(err === 'not-allowed' || err === 'service-not-allowed'){
+          voiceFatalError = true;
+          setVoiceStatus('🎤 マイクの使用が許可されていません。ブラウザのアドレスバーからマイクを許可してください。', true);
+        } else if(err === 'audio-capture'){
+          voiceFatalError = true;
+          setVoiceStatus('🎤 マイクが見つかりません。マイクを接続してから「測定開始」し直してください。', true);
+        } else if(err === 'no-speech'){
+          // 無音は無視して継続（onendから自動再開）
+        } else if(err === 'network'){
+          setVoiceStatus('🎤 音声認識のネットワークエラー。インターネット接続を確認してください。', true);
+        }
+      };
+      voiceRecognizer.onend = function(){
+        if(state.voiceEnabled && state.voiceListening && !voiceFatalError){
+          try{ voiceRecognizer.start(); }catch(e){}
+        }
+      };
+      state.voiceListening = true;
+      voiceRecognizer.start();
+    } catch(e){
+      voiceRecognizer = null;
+      setVoiceStatus('🎤 音声認識を開始できませんでした。', true);
+    }
+  }
+
+  function stopVoiceRecognition(){
+    state.voiceListening = false;
+    setVoiceStatus('', false);
+    if(voiceRecognizer){
+      try{ voiceRecognizer.onend = null; voiceRecognizer.stop(); }catch(e){}
+      voiceRecognizer = null;
+    }
+  }
+
+  /* ---------- 判定方法：カメラのみ ---------- */
+  modeNote.textContent = CAM_NOTE;
+  startBtn.disabled = !state.camCalibrated;
+  warnIfInsecureContext();
+
+  document.getElementById('voiceToggle').addEventListener('click', function(){
+    if(!supportsSpeech()){
+      alert('お使いのブラウザは音声認識に対応していません。Google Chromeでお試しください。');
+      return;
+    }
+    if(!isSecureForSpeech()){
+      alert('音声認識は https:// または localhost でのみ動作します。今のアドレスでは声のボーナスは反応しません。カメラ判定用のhttpsアドレスで開き直してください。');
+    }
+    state.voiceEnabled = !state.voiceEnabled;
+    var btn = document.getElementById('voiceToggle');
+    var note = document.getElementById('voiceNote');
+    if(state.voiceEnabled){
+      btn.classList.add('active');
+      note.style.display = 'block';
+    } else {
+      btn.classList.remove('active');
+      note.style.display = 'none';
+    }
+  });
+
+  function warnIfInsecureContext(){
+    var isLocalhost = (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+    var noteEl = document.getElementById('camSecurityNote');
+    if(location.protocol === 'http:' && !isLocalhost){
+      var httpsUrl = 'https://' + location.hostname + ':3443';
+      noteEl.innerHTML = '※このページは http で開かれているため、このままではカメラを起動できません。同じ端末のブラウザで <a href="' + httpsUrl + '" style="color:inherit;text-decoration:underline;">' + httpsUrl + '</a> を開き直してください（証明書の警告が出たら「詳細設定」→「アクセスする」で進めます）。';
+    }
+  }
+
+  var battleModeTabs = document.querySelectorAll('#battleModeTabs .mode-tab');
+  battleModeTabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      battleModeTabs.forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      state.battleMode = tab.getAttribute('data-mode');
+      if(state.battleMode === 'solo') startBtn.textContent = '測定開始';
+      else if(state.battleMode === 'local') startBtn.textContent = '1人目 測定開始';
+      else startBtn.textContent = 'オンライン対戦へ進む';
+      document.getElementById('onlineBattleNote').style.display = (state.battleMode === 'online') ? 'block' : 'none';
+    });
+  });
+
+  /* ---------- camera setup ---------- */
+  function waitForLibs(cb, triesLeft){
+    if(typeof tf !== 'undefined' && typeof poseDetection !== 'undefined'){ cb(); return; }
+    if(triesLeft <= 0){ camStatus.textContent = 'モデルの読み込みに失敗しました。ネットワーク環境を確認して、ページを再読み込みしてください。'; return; }
+    setTimeout(function(){ waitForLibs(cb, triesLeft-1); }, 300);
+  }
+
+  camStartBtn.addEventListener('click', function(){
+    camStatus.textContent = 'カメラへのアクセスを許可してください…';
+    camStartBtn.disabled = true;
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      var isLocalhost = (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+      if(location.protocol === 'http:' && !isLocalhost){
+        camStatus.textContent = 'httpで開いているためカメラを利用できません。https://' + location.hostname + ':3443 を開き直してください。';
+      } else {
+        camStatus.textContent = 'このブラウザ／環境ではカメラを利用できません。';
+      }
+      camStartBtn.disabled = false;
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({video:{width:480,height:360}, audio:false}).then(function(stream){
+      localCameraStream = stream;
+      state.cameraPaused = false;
+      if(camPauseBtn){ camPauseBtn.classList.remove('off'); }
+      if(camPausedOverlay){ camPausedOverlay.style.display = 'none'; }
+      camVideo.srcObject = stream;
+      return new Promise(function(resolve){
+        camVideo.onloadedmetadata = function(){ camVideo.play(); resolve(); };
+      });
+    }).then(function(){
+      camCanvas.width = camMirror.clientWidth;
+      camCanvas.height = camMirror.clientHeight;
+      camStatus.textContent = '判定モデルを読み込んでいます…（初回は少し時間がかかります）';
+      waitForLibs(function(){
+        tf.ready().then(function(){
+          return poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {modelType:'SinglePose.Lightning'});
+        }).then(function(det){
+          state.detector = det;
+          state.camReady = true;
+          camStatus.textContent = 'カメラ起動完了！気をつけの姿勢でカメラの正面に立ってください。';
+          camStartBtn.style.display = 'none';
+          calibrateBtn.style.display = 'block';
+          startPoseLoop();
+        }).catch(function(err){
+          camStatus.textContent = 'モデルの読み込みに失敗しました：' + (err && err.message ? err.message : err);
+          camStartBtn.disabled = false;
+        });
+      }, 40);
+    }).catch(function(err){
+      camStatus.textContent = 'カメラを起動できませんでした（許可されていない、または非対応環境です）。';
+      camStartBtn.disabled = false;
+    });
+  });
+
+  var lastPose = null;
+
+  function startPoseLoop(){
+    function loop(){
+      if(!state.detector || camVideo.readyState < 2){
+        state.camLoopHandle = requestAnimationFrame(loop);
+        return;
+      }
+      if(state.cameraPaused){
+        state.camLoopHandle = requestAnimationFrame(loop);
+        return;
+      }
+      state.detector.estimatePoses(camVideo, {flipHorizontal:false}).then(function(poses){
+        lastPose = (poses && poses[0]) ? poses[0] : null;
+        drawSkeleton(lastPose);
+        if(state.mode === 'camera' && document.getElementById('panel-bow').classList.contains('active')){
+          applyCamAngle(lastPose);
+        }
+      }).catch(function(){});
+      state.camLoopHandle = requestAnimationFrame(loop);
+    }
+    loop();
+  }
+
+  /* ---------- カメラのオン/オフ切り替え ---------- */
+  var camPauseBtn = document.getElementById('camPauseBtn');
+  var camPausedOverlay = document.getElementById('camPausedOverlay');
+  function setCameraPaused(paused){
+    state.cameraPaused = paused;
+    if(localCameraStream){
+      localCameraStream.getVideoTracks().forEach(function(track){ track.enabled = !paused; });
+    }
+    if(camPauseBtn){
+      camPauseBtn.textContent = paused ? '📷' : '📷';
+      camPauseBtn.classList.toggle('off', paused);
+      camPauseBtn.title = paused ? 'カメラを再開する' : 'カメラを一時停止する';
+    }
+    if(camPausedOverlay) camPausedOverlay.style.display = paused ? 'flex' : 'none';
+  }
+  if(camPauseBtn){
+    camPauseBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      setCameraPaused(!state.cameraPaused);
+    });
+  }
+  if(camPausedOverlay){
+    camPausedOverlay.addEventListener('click', function(){ setCameraPaused(false); });
+  }
+
+  function kp(pose, name){
+    if(!pose) return null;
+    for(var i=0;i<pose.keypoints.length;i++){
+      if(pose.keypoints[i].name === name) return pose.keypoints[i];
+    }
+    return null;
+  }
+
+  function poseMetrics(pose){
+    var nose = kp(pose,'nose'), ls = kp(pose,'left_shoulder'), rs = kp(pose,'right_shoulder'),
+        lh = kp(pose,'left_hip'), rh = kp(pose,'right_hip');
+    var minScore = 0.3;
+    if(!nose||!ls||!rs||!lh||!rh) return null;
+    if((nose.score||0)<minScore || (ls.score||0)<minScore || (rs.score||0)<minScore || (lh.score||0)<minScore || (rh.score||0)<minScore) return null;
+    var shoulderY = (ls.y+rs.y)/2, hipY = (lh.y+rh.y)/2, noseY = nose.y;
+    var torso = Math.max(20, hipY - shoulderY);
+    var headDrop = noseY - shoulderY;
+    return {shoulderY:shoulderY, hipY:hipY, noseY:noseY, torso:torso, headDrop:headDrop,
+      pts:{nose:nose, ls:ls, rs:rs, lh:lh, rh:rh}};
+  }
+
+  function drawSkeleton(pose){
+    camCtx.clearRect(0,0,camCanvas.width, camCanvas.height);
+    var m = poseMetrics(pose);
+    if(!m) return;
+    var sx = camCanvas.width / camVideo.videoWidth;
+    var sy = camCanvas.height / camVideo.videoHeight;
+    function P(pt){ return [pt.x*sx, pt.y*sy]; }
+    var pairs = [['ls','rs'],['ls','lh'],['rs','rh'],['lh','rh'],['nose','ls'],['nose','rs']];
+    camCtx.strokeStyle = '#d4a017';
+    camCtx.lineWidth = 3;
+    pairs.forEach(function(pr){
+      var a = P(m.pts[pr[0]]), b = P(m.pts[pr[1]]);
+      camCtx.beginPath(); camCtx.moveTo(a[0],a[1]); camCtx.lineTo(b[0],b[1]); camCtx.stroke();
+    });
+    Object.keys(m.pts).forEach(function(k){
+      var p = P(m.pts[k]);
+      camCtx.fillStyle = '#c81e2c';
+      camCtx.beginPath(); camCtx.arc(p[0],p[1],5,0,Math.PI*2); camCtx.fill();
+    });
+  }
+
+  var calibrating = false;
+  var calibSamples = [];
+
+  function runCalibration(statusEl, onDone){
+    if(calibrating || !state.camReady) return;
+    calibrating = true;
+    calibSamples = [];
+    var count = 3;
+    camCountdown.classList.add('show');
+    function step(){
+      if(count > 0){
+        camCountdown.textContent = count;
+        count--;
+        setTimeout(step, 800);
+      } else {
+        camCountdown.textContent = '📏';
+        collectCalibSample(0, statusEl, onDone);
+      }
+    }
+    step();
+  }
+
+  function collectCalibSample(n, statusEl, onDone){
+    if(n >= 10){
+      finishCalibration(statusEl, onDone);
+      return;
+    }
+    var m = poseMetrics(lastPose);
+    if(m) calibSamples.push(m);
+    setTimeout(function(){ collectCalibSample(n+1, statusEl, onDone); }, 80);
+  }
+
+  function finishCalibration(statusEl, onDone){
+    camCountdown.classList.remove('show');
+    if(calibSamples.length < 3){
+      statusEl.textContent = '姿勢を検出できませんでした。全身の上半身が映るようにもう一度お試しください。';
+      calibrating = false;
+      return;
+    }
+    var torsoSum = 0, headSum = 0;
+    calibSamples.forEach(function(s){ torsoSum += s.torso; headSum += s.headDrop; });
+    state.calib.torso0 = torsoSum / calibSamples.length;
+    state.calib.headOffset0 = headSum / calibSamples.length;
+    state.camCalibrated = true;
+    calibrating = false;
+    statusEl.textContent = '基準を記録しました！';
+    if(onDone) onDone();
+  }
+
+  calibrateBtn.addEventListener('click', function(){
+    runCalibration(camStatus, function(){
+      camStatus.textContent = '基準を記録しました！「測定開始」を押してください。';
+      if(state.mode === 'camera') startBtn.disabled = false;
+    });
+  });
+
+  var camSmoothed = 0;
+  function applyCamAngle(pose){
+    var m = poseMetrics(pose);
+    if(!m){
+      state.camLost++;
+      state.angle = clampAngle(state.angle - 4);
+      camSmoothed = state.angle;
+      if(state.angle > state.roundMax) state.roundMax = state.angle;
+      return;
+    }
+    state.camLost = 0;
+    var raw = (m.headDrop - state.calib.headOffset0) / state.calib.torso0;
+    var target = clampAngle(raw * MAX_ANGLE * CAM_SCALE);
+    camSmoothed = camSmoothed * 0.45 + target * 0.55;
+    state.angle = clampAngle(camSmoothed);
+    if(state.angle > state.roundMax) state.roundMax = state.angle;
+  }
+
+  /* ---------- visuals ---------- */
+  function updateVisual(){
+    var dispAngle = effectiveAngle();
+    upperBody.setAttribute('transform', 'rotate(' + dispAngle + ',150,200)');
+    var pct = Math.round(dispAngle / MAX_ANGLE * 100);
+    meterFill.style.width = pct + '%';
+    meterPct.textContent = pct + '%';
+    statAngle.textContent = Math.round(dispAngle) + '°';
+    var floorCm = Math.round((MAX_ANGLE - dispAngle) / MAX_ANGLE * 80);
+    statFloor.textContent = floorCm + 'cm';
+    statFail.textContent = state.failCount;
+    statCall.textContent = state.interruptOk + '/' + (state.interruptOk + state.interruptNg);
+
+    var r = currentRound();
+    meterThreshold.style.left = (r.threshold / MAX_ANGLE * 100) + '%';
+    commentTarget.textContent = state.target;
+
+    var holdPct = Math.min(100, Math.round(state.holdMs / (r.holdSec*1000) * 100));
+    holdFill.style.width = holdPct + '%';
+    holdText.textContent = '目標 ' + r.threshold + '° 以上をキープ　' + (state.holdMs/1000).toFixed(1) + 's / ' + r.holdSec.toFixed(1) + 's';
+  }
+
+  function updateRoundBanner(){
+    var r = currentRound();
+    roundLabel.textContent = r.label;
+    for(var i=0;i<roundDots.length;i++){
+      roundDots[i].className = i < state.roundIndex ? 'done' : (i === state.roundIndex ? 'cur' : '');
+    }
+  }
+
+  /* ---------- interrupt events ---------- */
+  var INTERRUPT_EVENTS = [
+    {icon:'📞', text:'上司から電話です！Spaceキーでスルー！', ok:'電話スルー成功！誠意は保たれました。', ng:'電話が気になって集中が切れました…頭が上がってしまいます。'},
+    {icon:'🦟', text:'蚊が飛んできました！Spaceキーで気合いで無視！', ok:'蚊を華麗に無視しました。さすがです。', ng:'蚊に気を取られて姿勢が崩れました…。'},
+    {icon:'📱', text:'LINEの通知です（既読スルーの証拠かも）！Spaceキーでスルー！', ok:'通知を見なかったことにしました。誠意は保たれました。', ng:'通知が気になって頭が上がってしまいました…。'},
+    {icon:'👀', text:'誰かがこっそり覗いています！Spaceキーで気にしない！', ok:'視線を気にせず貫き通しました。プロです。', ng:'視線が気になって集中が切れました…。'}
+  ];
+  var currentInterruptEvent = INTERRUPT_EVENTS[0];
+
+  function scheduleInterrupt(){
+    if(state.finished) return;
+    var delay = 3800 + Math.random()*3200;
+    state.interruptTimer = setTimeout(triggerInterrupt, delay);
+  }
+  function triggerInterrupt(){
+    if(state.finished) return;
+    state.interruptActive = true;
+    currentInterruptEvent = INTERRUPT_EVENTS[Math.floor(Math.random()*INTERRUPT_EVENTS.length)];
+    interruptBanner.childNodes[0].textContent = currentInterruptEvent.icon + ' ' + currentInterruptEvent.text;
+    var windowMs = 2000;
+    interruptBanner.classList.add('show');
+    beep(440, 0.08, 'square');
+    interruptBar.style.transition = 'none';
+    interruptBar.style.width = '100%';
+    requestAnimationFrame(function(){
+      interruptBar.style.transition = 'width ' + windowMs + 'ms linear';
+      interruptBar.style.width = '0%';
+    });
+    setTimeout(function(){ if(state.interruptActive) resolveInterrupt(false); }, windowMs);
+  }
+  function resolveInterrupt(success){
+    if(!state.interruptActive) return;
+    state.interruptActive = false;
+    interruptBanner.classList.remove('show');
+    var shakeTarget = state.mode === 'camera' ? camMirror : figureWrap;
+    if(success){
+      state.interruptOk++;
+      commentText.textContent = currentInterruptEvent.ok;
+      beep(880, 0.09, 'sine');
+    } else {
+      state.interruptNg++;
+      state.angle = clampAngle(state.angle - 25);
+      camSmoothed = state.angle;
+      state.holdMs = Math.max(0, state.holdMs - 700);
+      shakeTarget.classList.remove('shake'); void shakeTarget.offsetWidth; shakeTarget.classList.add('shake');
+      commentText.textContent = currentInterruptEvent.ng;
+      beep(180, 0.15, 'sawtooth');
+    }
+    scheduleInterrupt();
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.code === 'Space' && state.interruptActive){
+      e.preventDefault();
+      resolveInterrupt(true);
+    }
+  });
+
+  /* ---------- round flow ---------- */
+  function clearRoundState(){
+    state.angle = 0;
+    state.roundMax = 0;
+    state.holdMs = 0;
+    state.lastY = 0;
+    state.dragging = false;
+    state.voiceBonus = 0;
+    state.prevEffAngle = 0;
+    camSmoothed = 0;
+  }
+  function nextRound(){
+    state.roundResults.push(Math.round(state.roundMax));
+    beep(660, 0.12, 'triangle');
+    if(state.battleMode === 'online' && state.onlineSubMode === 'hp'){
+      state.pendingDamage += 2.5; // ラウンドクリアボーナスダメージ
+    }
+    if(state.roundIndex >= ROUNDS.length - 1){ finish(); return; }
+    state.roundIndex++;
+    clearRoundState();
+    updateRoundBanner();
+    commentText.textContent = 'ラウンドクリア！次のラウンドはさらに厳しくなります。';
+  }
+  function buildResult(){
+    var pctSum = 0;
+    for(var i=0;i<state.roundResults.length;i++){ pctSum += state.roundResults[i] / MAX_ANGLE * 100; }
+    var avgPct = pctSum / state.roundResults.length;
+    var score = Math.round(avgPct - state.failCount*1.5 - state.interruptNg*2 + state.interruptOk*3 + (state.voiceBoostCount||0)*2);
+    score = Math.max(0, Math.min(100, score));
+    var maxAngleOverall = Math.max.apply(null, state.roundResults);
+
+    var rank;
+    if(score >= 95) rank = '伝説の土下座師';
+    else if(score >= 80) rank = '土下座熟練者';
+    else if(score >= 62) rank = '土下座見習い';
+    else if(score >= 45) rank = '誠意迷子';
+    else if(score >= 25) rank = '会釈マスター';
+    else rank = '反省ゼロ野郎';
+
+    var totalHoldSec = ROUNDS.reduce(function(s,r){ return s + r.holdSec; }, 0);
+    var calories = Math.round(totalHoldSec * 11 + state.failCount * 3 + state.interruptNg * 2 + Math.random()*8);
+    var hensachi = Math.round(38 + score * 0.32 + Math.random()*4);
+    var judgeComment = JUDGE_COMMENTS[Math.floor(Math.random()*JUDGE_COMMENTS.length)];
+
+    return {
+      id: Date.now() + '-' + Math.floor(Math.random()*1000),
+      name: currentPlayerName(),
+      target: state.target,
+      reason: state.reason,
+      mode: state.mode,
+      score: score,
+      rank: rank,
+      maxAngle: maxAngleOverall,
+      failCount: state.failCount,
+      interruptOk: state.interruptOk,
+      interruptNg: state.interruptNg,
+      calories: calories,
+      hensachi: hensachi,
+      judgeComment: judgeComment,
+      voiceBoostCount: state.voiceBoostCount||0,
+      ts: Date.now()
+    };
+  }
+
+  function renderCertDom(result){
+    document.getElementById('certRank').textContent = result.rank;
+    document.getElementById('certScore').textContent = '誠意スコア ' + result.score + '点';
+    document.getElementById('certTag').textContent = RANK_TAGS[result.rank] || '';
+    document.getElementById('certTarget').textContent = result.target;
+    document.getElementById('certReason').textContent = result.reason || '（理由は闇の中）';
+    document.getElementById('certMode').textContent = '📷 カメラ判定';
+    document.getElementById('certAngle').textContent = result.maxAngle + '°';
+    document.getElementById('certFail').textContent = result.failCount + '回';
+    document.getElementById('certCallOk').textContent = result.interruptOk + '回';
+    document.getElementById('certCalorie').textContent = result.calories + 'kcal';
+    document.getElementById('certHensachi').textContent = result.hensachi;
+    document.getElementById('certVoice').textContent = (result.voiceBoostCount||0) + '回';
+    document.getElementById('certJudge').textContent = '審査員コメント：' + result.judgeComment;
+  }
+
+  function saveToLeaderboard(result){
+    try{
+      var list = JSON.parse(localStorage.getItem('dogezaLeaderboard') || '[]');
+      list.push({id:result.id, name:result.name, score:result.score, rank:result.rank, mode:result.mode, ts:result.ts});
+      list.sort(function(a,b){ return b.score - a.score; });
+      if(list.length > 50) list = list.slice(0,50);
+      localStorage.setItem('dogezaLeaderboard', JSON.stringify(list));
+    } catch(e){}
+  }
+
+  function showVsResult(){
+    var p1 = state.p1, p2 = state.p2;
+    document.getElementById('vsP1Name').textContent = p1.name;
+    document.getElementById('vsP1Score').textContent = p1.score + '点';
+    document.getElementById('vsP1Rank').textContent = p1.rank;
+    document.getElementById('vsP2Name').textContent = p2.name;
+    document.getElementById('vsP2Score').textContent = p2.score + '点';
+    document.getElementById('vsP2Rank').textContent = p2.rank;
+    var banner = document.getElementById('vsWinnerBanner');
+    if(p1.score === p2.score){
+      banner.textContent = '🤝 引き分け！ 二人とも誠意は本物でした。';
+    } else if(p1.score > p2.score){
+      banner.textContent = '🏆 ' + p1.name + 'さんの勝利！';
+    } else {
+      banner.textContent = '🏆 ' + p2.name + 'さんの勝利！';
+    }
+    show('panel-vs-result');
+  }
+
+  function showOnlineWaitingResult(mine){
+    document.getElementById('vsP1Name').textContent = mine.name + '（あなた）';
+    document.getElementById('vsP1Score').textContent = mine.score + '点';
+    document.getElementById('vsP1Rank').textContent = mine.rank;
+    document.getElementById('vsP2Name').textContent = state.opponentName || '相手';
+    if(state.opponentResult){
+      document.getElementById('vsP2Score').textContent = state.opponentResult.score + '点';
+      document.getElementById('vsP2Rank').textContent = state.opponentResult.rank;
+    } else {
+      document.getElementById('vsP2Score').textContent = '集計中…';
+      document.getElementById('vsP2Rank').textContent = '';
+    }
+    document.getElementById('vsWinnerBanner').textContent = '⏳ 相手の結果を待っています…';
+    show('panel-vs-result');
+  }
+
+  function showOnlineResult(mine, opp, myName, oppName){
+    document.getElementById('vsP1Name').textContent = myName + '（あなた）';
+    document.getElementById('vsP1Score').textContent = mine.score + '点';
+    document.getElementById('vsP1Rank').textContent = mine.rank + (typeof mine.hp === 'number' ? '・残りHP' + mine.hp : '');
+    document.getElementById('vsP2Name').textContent = oppName;
+    document.getElementById('vsP2Score').textContent = opp.score + '点';
+    document.getElementById('vsP2Rank').textContent = opp.rank + (typeof opp.hp === 'number' ? '・残りHP' + opp.hp : '');
+    var banner = document.getElementById('vsWinnerBanner');
+    if(mine.score === opp.score){
+      banner.textContent = '🤝 引き分け！ 二人とも誠意は本物でした。';
+    } else if(mine.score > opp.score){
+      banner.textContent = '🏆 あなたの勝利！（' + myName + 'さん）';
+    } else {
+      banner.textContent = '😭 ' + oppName + 'さんの勝利…また挑戦しましょう。';
+    }
+    fanfare();
+    confettiBurst();
+    show('panel-vs-result');
+  }
+
+  function finish(){
+    state.finished = true;
+    stopVoiceRecognition();
+    if(state.interruptTimer) clearTimeout(state.interruptTimer);
+    interruptBanner.classList.remove('show');
+
+    var result = buildResult();
+    saveToLeaderboard(result);
+    state.lastResultId = result.id;
+
+    if(state.battleMode === 'online'){
+      state.myResult = result;
+      sendWS({
+        type:'finished',
+        result:{
+          name:result.name, score:result.score, rank:result.rank, maxAngle:result.maxAngle,
+          failCount:result.failCount, interruptOk:result.interruptOk, interruptNg:result.interruptNg,
+          hp:Math.round(state.myHp)
+        }
+      });
+      setTimeout(function(){ showOnlineWaitingResult(result); }, 400);
+      return;
+    }
+
+    if(state.vsMode){
+      if(state.turn === 1){
+        state.p1 = result;
+        state.turn = 2;
+        setTimeout(function(){ showHandoff(); }, 500);
+      } else {
+        state.p2 = result;
+        setTimeout(function(){ showVsResult(); fanfare(); confettiBurst(); }, 500);
+      }
+    } else {
+      renderCertDom(result);
+      setTimeout(function(){
+        show('panel-cert');
+        fanfare();
+        confettiBurst();
+      }, 400);
+    }
+  }
+
+  function tick(){
+    if(state.finished) return;
+    var r = currentRound();
+    if(!document.getElementById('panel-bow').classList.contains('active')) return;
+
+    // 声の謝罪ボーナスは時間とともに少しずつ減衰（連呼し続ければキープできる）
+    if(state.voiceBonus > 0){
+      state.voiceBonus = Math.max(0, state.voiceBonus - 0.5);
+    }
+
+    var effAngle = effectiveAngle();
+    if(effAngle > state.roundMax) state.roundMax = effAngle;
+
+    var meetsThreshold = effAngle >= r.threshold && (state.mode === 'camera' || state.dragging || state.voiceBonus > 0);
+    var wasHolding = state.holdMs > 0;
+    if(meetsThreshold){
+      state.holdMs += 50;
+    } else {
+      state.holdMs = Math.max(0, state.holdMs - 35);
+      if(wasHolding && state.holdMs === 0){ state.failCount++; }
+    }
+
+    // ---- 対戦バトル：勢い（1tickあたりの角度の伸び＝スピード）に応じてダメージを積む ----
+    // 単純な合計角度ではなく、一気に動かすほど指数的にダメージが伸びるようにして
+    // 「ゆっくり系」より「勢いよく系」の方が明確に有利になるようにしている。
+    if(state.battleMode === 'online' && state.onlineSubMode === 'hp'){
+      var deltaEff = effAngle - state.prevEffAngle;
+      if(deltaEff > 0) state.pendingDamage += Math.pow(deltaEff, 1.6) * 0.008;
+      if(meetsThreshold) state.pendingDamage += 0.02;
+      state.prevEffAngle = effAngle;
+    }
+
+    if(state.battleMode === 'online' && Date.now() - state.lastProgressSent > 300){
+      state.lastProgressSent = Date.now();
+      var dmgToSend = Math.round(state.pendingDamage * 10) / 10;
+      state.pendingDamage = 0;
+      sendWS({
+        type:'progress',
+        angle: Math.round(effAngle),
+        roundIndex: state.roundIndex,
+        holdPct: Math.min(100, Math.round(state.holdMs / (r.holdSec*1000) * 100)),
+        dealtDamage: dmgToSend,
+        hp: Math.round(state.myHp)
+      });
+      // 自分が今まさに相手に与えたダメージを即座に表示（サーバー往復を待たない体感演出）
+      if(state.onlineSubMode === 'hp' && dmgToSend >= 1){
+        showDamageFloat(dmgToSend, 'opp');
+        beep(720, 0.05, 'triangle');
+      }
+    }
+
+    if(state.holdMs >= r.holdSec * 1000){
+      updateVisual();
+      nextRound();
+      return;
+    }
+    updateVisual();
+  }
+
+  /* ---------- start / retry ---------- */
+  function currentPlayerName(){
+    if(state.battleMode === 'online' || state.battleMode === 'solo') return state.playerName;
+    return state.turn === 1 ? state.playerName : state.p2Name;
+  }
+
+  function attachCameraToBow(){
+    var bowFigure = document.getElementById('figureWrap');
+    bowFigure.style.display = 'none';
+    bowFigure.parentElement.insertBefore(camBlockStage(), bowFigure);
+    if(camCanvas.width !== camMirror.clientWidth || camCanvas.height !== camMirror.clientHeight){
+      camCanvas.width = camMirror.clientWidth;
+      camCanvas.height = camMirror.clientHeight;
+    }
+  }
+
+  function detachCameraFromBowToBlock(targetBlock){
+    targetBlock.insertBefore(camMirror, targetBlock.firstChild);
+    var stage = document.getElementById('camStageInBow');
+    if(stage) stage.style.display = 'none';
+    document.getElementById('figureWrap').style.display = 'block';
+  }
+
+  function beginPlay(){
+    state.roundIndex = 0;
+    state.roundResults = [];
+    state.failCount = 0;
+    state.interruptOk = 0;
+    state.interruptNg = 0;
+    state.finished = false;
+    state.opponentResult = null;
+    state.voiceBoostCount = 0;
+    state.myHp = HP_MAX;
+    state.oppHp = HP_MAX;
+    state.pendingDamage = 0;
+    setCameraPaused(false);
+    clearRoundState();
+    updateRoundBanner();
+    updateVisual();
+
+    if(state.voiceEnabled) startVoiceRecognition();
+
+    if(state.mode === 'camera'){
+      attachCameraToBow();
+    } else {
+      document.getElementById('figureWrap').style.display = 'block';
+      var stage = document.getElementById('camStageInBow');
+      if(stage) stage.style.display = 'none';
+    }
+
+    if(state.battleMode === 'local'){
+      turnLabel.style.display = 'block';
+      turnLabel.textContent = currentPlayerName() + 'さんの挑戦中（' + state.turn + '人目 / 2人）';
+      oppStatusEl.style.display = 'none';
+    } else if(state.battleMode === 'online'){
+      turnLabel.style.display = 'block';
+      turnLabel.textContent = (state.onlineSubMode === 'hp' ? '⚔️ HPバトル中' : '🙏 謝罪対戦中') + ' - VS ' + (state.opponentName || '相手');
+      oppStatusEl.style.display = 'block';
+      document.getElementById('oppName').textContent = (state.opponentName || '相手') + 'の状況';
+      document.getElementById('oppRoundText').textContent = 'ラウンド1/3・0°';
+      document.getElementById('oppBar').style.width = '0%';
+      var oppBodyReset = document.getElementById('oppUpperBody');
+      if(oppBodyReset) oppBodyReset.style.transform = 'rotate(0deg)';
+      if(!oppVideoEl.srcObject){
+        oppVideoEl.style.display = 'none';
+        oppFigSvgEl.style.display = 'block';
+        oppVideoHintEl.style.display = 'block';
+      }
+      if(state.onlineSubMode === 'hp'){
+        document.getElementById('hpBattleRow').style.display = 'flex';
+        document.getElementById('hpMyName').textContent = state.playerName + '（あなた）';
+        document.getElementById('hpOppName').textContent = state.opponentName || '相手';
+        updateHpUI();
+      } else {
+        document.getElementById('hpBattleRow').style.display = 'none';
+      }
+    } else {
+      turnLabel.style.display = 'none';
+      oppStatusEl.style.display = 'none';
+      document.getElementById('hpBattleRow').style.display = 'none';
+    }
+
+    show('panel-bow');
+    scheduleInterrupt();
+  }
+
+  function captureSetupFields(){
+    state.playerName = document.getElementById('nameInput').value.trim() || '名無しの土下座師';
+    state.target = document.getElementById('targetSelect').value;
+    state.reason = document.getElementById('reasonInput').value.trim();
+  }
+
+  startBtn.addEventListener('click', function(){
+    captureSetupFields();
+
+    if(state.battleMode === 'online'){
+      resetOnlineLobbyUI();
+      show('panel-online-lobby');
+      return;
+    }
+
+    state.vsMode = (state.battleMode === 'local');
+    state.turn = 1;
+    state.p1 = null;
+    state.p2 = null;
+    beginPlay();
+  });
+
+  function camBlockStage(){
+    var existing = document.getElementById('camStageInBow');
+    if(existing){ existing.style.display = 'block'; return existing; }
+    var wrap = document.createElement('div');
+    wrap.id = 'camStageInBow';
+    wrap.appendChild(camMirror);
+    document.getElementById('myVideoCol').appendChild(wrap);
+    return wrap;
+  }
+
+  function backToSetupFromPlay(){
+    stopVoiceRecognition();
+    if(state.interruptTimer) clearTimeout(state.interruptTimer);
+    interruptBanner.classList.remove('show');
+    state.interruptActive = false;
+    state.turn = 1; state.p1 = null; state.p2 = null;
+    if(state.mode === 'camera'){
+      detachCameraFromBowToBlock(camBlock);
+      camBlock.classList.add('show');
+    }
+    show('panel-setup');
+  }
+
+  document.getElementById('retryBtn').addEventListener('click', backToSetupFromPlay);
+
+  document.getElementById('vsRetryBtn').addEventListener('click', function(){
+    if(state.battleMode === 'online'){
+      leaveOnlineRoom();
+    }
+    backToSetupFromPlay();
+  });
+
+  /* ---------- handoff (local vs mode) ---------- */
+  var handoffCalibrateBtn = document.getElementById('handoffCalibrateBtn');
+  var handoffStartBtn = document.getElementById('handoffStartBtn');
+  var handoffCamBlock = document.getElementById('handoffCamBlock');
+  var handoffCamStatus = document.getElementById('handoffCamStatus');
+
+  function showHandoff(){
+    document.getElementById('handoffMsg').textContent = state.p1.name + 'さん、お疲れ様でした！（スコア' + state.p1.score + '点） 次は挑戦者の番です。';
+    document.getElementById('p2NameInput').value = '';
+    var camNeeded = state.mode === 'camera';
+    handoffCamBlock.style.display = camNeeded ? 'block' : 'none';
+    handoffStartBtn.disabled = camNeeded;
+    handoffCamStatus.textContent = camNeeded ? '気をつけの姿勢で基準を取り直してください。' : '';
+    if(camNeeded){
+      handoffCamBlock.insertBefore(camMirror, handoffCamBlock.firstChild);
+      if(camCanvas.width !== camMirror.clientWidth || camCanvas.height !== camMirror.clientHeight){
+        camCanvas.width = camMirror.clientWidth;
+        camCanvas.height = camMirror.clientHeight;
+      }
+    }
+    show('panel-handoff');
+  }
+
+  handoffCalibrateBtn.addEventListener('click', function(){
+    runCalibration(handoffCamStatus, function(){
+      handoffCamStatus.textContent = '基準を記録しました！「挑戦者スタート」を押してください。';
+      handoffStartBtn.disabled = false;
+    });
+  });
+
+  handoffStartBtn.addEventListener('click', function(){
+    state.p2Name = document.getElementById('p2NameInput').value.trim() || '名無しの挑戦者';
+    beginPlay();
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', function(){
+    var target = document.getElementById('certBox');
+    if(typeof html2canvas === 'function'){
+      html2canvas(target, {backgroundColor:'#ffffff', scale:2}).then(function(canvas){
+        var link = document.createElement('a');
+        link.download = 'dogeza-certificate.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }).catch(function(){
+        alert('画像生成に失敗しました。スクリーンショットで保存してください。');
+      });
+    } else {
+      alert('画像生成ライブラリを読み込めませんでした。スクリーンショットで保存してください。');
+    }
+  });
+
+  /* ---------- leaderboard ---------- */
+  function loadLeaderboard(){
+    try{ return JSON.parse(localStorage.getItem('dogezaLeaderboard') || '[]'); } catch(e){ return []; }
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function renderLeaderboard(highlightId){
+    var list = loadLeaderboard().slice(0,10);
+    var el = document.getElementById('leaderboardList');
+    if(list.length === 0){
+      el.innerHTML = '<div class="lb-empty">まだ記録がありません。最初の挑戦者になりましょう！</div>';
+      return;
+    }
+    var medals = ['🥇','🥈','🥉'];
+    el.innerHTML = list.map(function(item, i){
+      var medal = medals[i] || ((i+1) + '.');
+      var cls = 'lb-row' + (item.id === highlightId ? ' highlight' : '');
+      var modeIcon = item.mode === 'camera' ? '📷' : '🖱️';
+      return '<div class="' + cls + '"><div class="lb-rank">' + medal + '</div>' +
+        '<div style="flex:1;"><div class="lb-name">' + escapeHtml(item.name) + '</div><div class="lb-sub">' + escapeHtml(item.rank) + ' ' + modeIcon + '</div></div>' +
+        '<div class="lb-score">' + item.score + '</div></div>';
+    }).join('');
+  }
+  document.getElementById('certLeaderboardBtn').addEventListener('click', function(){
+    renderLeaderboard(state.lastResultId);
+    show('panel-leaderboard');
+  });
+  document.getElementById('vsLeaderboardBtn').addEventListener('click', function(){
+    renderLeaderboard(state.lastResultId);
+    show('panel-leaderboard');
+  });
+  document.getElementById('lbBackBtn').addEventListener('click', function(){
+    show('panel-setup');
+  });
+  document.getElementById('lbClearBtn').addEventListener('click', function(){
+    if(confirm('ランキングをリセットしますか？')){
+      localStorage.removeItem('dogezaLeaderboard');
+      renderLeaderboard(null);
+    }
+  });
+
+  /* ---------- online multiplayer ---------- */
+  var ws = null;
+  var onlineStatusEl = document.getElementById('onlineStatus');
+  var onlineChoiceEl = document.getElementById('onlineChoice');
+  var onlineWaitingEl = document.getElementById('onlineWaiting');
+  var waitingMsgEl = document.getElementById('waitingMsg');
+  var roomCodeDisplayEl = document.getElementById('roomCodeDisplay');
+
+  /* ---------- WebRTC（相手のカメラ映像を直接表示） ---------- */
+  var localCameraStream = null;
+  var pc = null;
+  var oppVideoEl = document.getElementById('oppVideo');
+  var oppFigSvgEl = document.getElementById('oppFigSvg');
+  var oppVideoHintEl = document.getElementById('oppVideoHint');
+  var ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
+
+  function closePeerConnection(){
+    if(pc){
+      try{ pc.close(); } catch(e){}
+      pc = null;
+    }
+    remoteVideoStream = null;
+    oppVideoEl.pause();
+    oppVideoEl.srcObject = null;
+    oppVideoEl.style.display = 'none';
+    oppFigSvgEl.style.display = 'block';
+    oppVideoHintEl.style.display = 'block';
+    oppVideoHintEl.textContent = '映像接続待ち…（相手もカメラ判定モードなら自動でつながります）';
+  }
+
+  var remoteVideoStream = null; // 接続が不安定になっても失わないよう、映像ストリームへの参照を保持しておく
+
+  function ensurePeerConnection(){
+    if(pc) return pc;
+    pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    remoteVideoStream = null;
+
+    if(localCameraStream){
+      localCameraStream.getTracks().forEach(function(track){
+        pc.addTrack(track, localCameraStream);
+      });
+    }
+
+    pc.ontrack = function(evt){
+      remoteVideoStream = evt.streams[0];
+      oppVideoEl.srcObject = remoteVideoStream;
+      oppVideoEl.style.display = 'block';
+      oppFigSvgEl.style.display = 'none';
+      oppVideoHintEl.style.display = 'none';
+    };
+
+    pc.onicecandidate = function(evt){
+      if(evt.candidate){
+        sendWS({ type:'rtc_ice', candidate: evt.candidate });
+      }
+    };
+
+    // 相手の回線が不安定でも「画面が固まる」ことがないよう、映像を止めてイラスト表示に
+    // 切り替える（対戦の数値進行はWebSocket側で別途続いているので試合は止まらない）。
+    // 接続が戻ったら自動でまた映像表示に復帰する。
+    pc.oniceconnectionstatechange = function(){
+      if(!pc) return;
+      var st = pc.iceConnectionState;
+      if(st === 'failed' || st === 'disconnected'){
+        oppVideoEl.style.display = 'none';
+        oppFigSvgEl.style.display = 'block';
+        oppVideoHintEl.style.display = 'block';
+        oppVideoHintEl.textContent = '相手の映像が不安定なため、数値表示に切り替えました。対戦はこのまま続きます。';
+      } else if((st === 'connected' || st === 'completed') && remoteVideoStream){
+        oppVideoEl.style.display = 'block';
+        oppFigSvgEl.style.display = 'none';
+        oppVideoHintEl.style.display = 'none';
+      }
+    };
+
+    return pc;
+  }
+
+  function startRtcAsHost(){
+    var conn = ensurePeerConnection();
+    conn.createOffer().then(function(offer){
+      return conn.setLocalDescription(offer);
+    }).then(function(){
+      sendWS({ type:'rtc_offer', sdp: conn.localDescription });
+    }).catch(function(){});
+  }
+
+  function handleRtcOffer(sdp){
+    var conn = ensurePeerConnection();
+    conn.setRemoteDescription(new RTCSessionDescription(sdp)).then(function(){
+      return conn.createAnswer();
+    }).then(function(answer){
+      return conn.setLocalDescription(answer);
+    }).then(function(){
+      sendWS({ type:'rtc_answer', sdp: conn.localDescription });
+    }).catch(function(){});
+  }
+
+  function handleRtcAnswer(sdp){
+    if(!pc) return;
+    pc.setRemoteDescription(new RTCSessionDescription(sdp)).catch(function(){});
+  }
+
+  function handleRtcIce(candidate){
+    if(!pc || !candidate) return;
+    pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(function(){});
+  }
+
+  function wsUrl(){
+    return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+  }
+
+  function connectWS(onOpen){
+    if(ws && ws.readyState === WebSocket.OPEN){ onOpen(); return; }
+    try{
+      ws = new WebSocket(wsUrl());
+    } catch(e){
+      onlineStatusEl.textContent = 'サーバーに接続できませんでした。node server.js が起動しているか確認してください。';
+      return;
+    }
+    ws.onopen = function(){ if(onOpen) onOpen(); };
+    ws.onmessage = function(evt){
+      var msg;
+      try{ msg = JSON.parse(evt.data); } catch(e){ return; }
+      handleServerMessage(msg);
+    };
+    ws.onclose = function(){
+      if(state.battleMode === 'online' && !state.finished && document.getElementById('panel-bow').classList.contains('active')){
+        commentText.textContent = 'サーバーとの接続が切れました…';
+      }
+    };
+    ws.onerror = function(){
+      onlineStatusEl.textContent = 'サーバーに接続できませんでした。node server.js が起動しているか確認してください。';
+    };
+  }
+
+  function sendWS(obj){
+    if(ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+  }
+
+  function leaveOnlineRoom(){
+    sendWS({type:'leave'});
+    if(ws){ ws.close(); ws = null; }
+    state.roomCode = null;
+    closePeerConnection();
+  }
+
+  function resetOnlineLobbyUI(){
+    onlineChoiceEl.style.display = 'block';
+    onlineWaitingEl.style.display = 'none';
+    onlineStatusEl.textContent = 'ルームを作るか、コードを入力して参加してください。';
+    document.getElementById('joinCodeInput').value = '';
+  }
+
+  function startOnlineMatch(){
+    waitingMsgEl.textContent = (state.opponentName || '相手') + 'さんが参加しました！まもなく開始します…';
+    setTimeout(function(){ beginPlay(); }, 1200);
+  }
+
+  function updateOpponentWidget(msg){
+    document.getElementById('oppRoundText').textContent = 'ラウンド' + (msg.roundIndex+1) + '/3・' + msg.angle + '°';
+    document.getElementById('oppBar').style.width = (msg.holdPct||0) + '%';
+    var oppBody = document.getElementById('oppUpperBody');
+    if(oppBody) oppBody.style.transform = 'rotate(' + msg.angle + 'deg)';
+  }
+
+  /* ---------- HPバトル演出 ---------- */
+  var HP_MAX = 100;
+  function hpFillClass(pct){
+    if(pct <= 15) return 'critical';
+    if(pct <= 40) return 'low';
+    return '';
+  }
+  function updateHpUI(){
+    var myPct = Math.max(0, Math.min(100, Math.round(state.myHp)));
+    var oppPct = Math.max(0, Math.min(100, Math.round(state.oppHp)));
+    var myFill = document.getElementById('hpMyFill');
+    var oppFill = document.getElementById('hpOppFill');
+    if(myFill){
+      myFill.style.width = myPct + '%';
+      myFill.className = 'hp-bar-fill ' + hpFillClass(myPct);
+    }
+    if(oppFill){
+      oppFill.style.width = oppPct + '%';
+      oppFill.className = 'hp-bar-fill ' + hpFillClass(oppPct);
+    }
+    var myVal = document.getElementById('hpMyVal');
+    var oppVal = document.getElementById('hpOppVal');
+    if(myVal) myVal.textContent = myPct;
+    if(oppVal) oppVal.textContent = oppPct;
+  }
+
+  function flashRing(el){
+    if(!el) return;
+    el.classList.remove('hit-ring'); void el.offsetWidth; el.classList.add('hit-ring');
+    setTimeout(function(){ el.classList.remove('hit-ring'); }, 420);
+  }
+  function flashTint(el){
+    if(!el) return;
+    el.classList.remove('hit-tint'); void el.offsetWidth; el.classList.add('hit-tint');
+    setTimeout(function(){ el.classList.remove('hit-tint'); }, 520);
+  }
+  function flashShake(el, light){
+    if(!el) return;
+    var cls = light ? 'shake-light' : 'shake';
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    setTimeout(function(){ el.classList.remove(cls); }, light ? 320 : 380);
+  }
+  function flashScreen(dealt){
+    var flash = document.getElementById('hitFlash');
+    if(!flash) return;
+    flash.classList.remove('show','dealt');
+    void flash.offsetWidth;
+    flash.classList.add('show');
+    if(dealt) flash.classList.add('dealt');
+    setTimeout(function(){ flash.classList.remove('show','dealt'); }, 460);
+  }
+
+  // target: 'my' = 自分がダメージを受けた／'opp' = 自分が相手にダメージを与えた
+  function showDamageFloat(amount, target){
+    var dmg = Math.round(amount);
+    if(!dmg || dmg <= 0) return;
+    var fillId = target === 'opp' ? 'hpOppFill' : 'hpMyFill';
+    var fill = document.getElementById(fillId);
+    var outer = fill ? fill.parentElement : null;
+    var block = outer ? outer.closest('.hp-block') : null;
+    if(!block || !outer) return;
+
+    var dealt = target === 'opp';
+    var el = document.createElement('div');
+    el.className = 'dmg-float' + (dealt ? ' dealt' : '');
+    el.textContent = (dealt ? '💥 ' : '😵 ') + dmg + 'ダメージ！';
+    el.style.fontSize = dmg >= 10 ? '30px' : '23px';
+    if(dealt){ el.style.right = '2px'; } else { el.style.left = '2px'; }
+    block.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 950);
+
+    // ヒットフラッシュ＋シェイクでダメージをわかりやすく演出（HPバー側）
+    outer.classList.remove('hit'); void outer.offsetWidth; outer.classList.add('hit');
+    flashShake(block);
+    setTimeout(function(){ outer.classList.remove('hit'); }, 420);
+
+    // 実際にカメラ／映像のところにも演出＋画面フラッシュ
+    if(dealt){
+      // 相手にダメージを与えた瞬間：相手の映像が赤く染まって「食らった」感じになり、少しだけ揺れる
+      var oppBox = document.getElementById('oppVideoBox');
+      flashTint(oppBox);
+      flashShake(oppBox, true);
+      flashScreen(true);
+    } else {
+      var myShakeTarget = state.mode === 'camera'
+        ? document.querySelector('#myVideoCol .cam-mirror')
+        : document.getElementById('figureWrap');
+      flashRing(myShakeTarget);
+      flashShake(myShakeTarget);
+      flashScreen(false);
+    }
+  }
+
+  function showKoResult(iWon){
+    var myName = currentPlayerName();
+    var oppName = state.opponentName || '相手';
+    document.getElementById('vsP1Name').textContent = myName + '（あなた）';
+    document.getElementById('vsP2Name').textContent = oppName;
+    var banner = document.getElementById('vsWinnerBanner');
+    if(iWon){
+      document.getElementById('vsP1Score').textContent = '残りHP ' + Math.max(0, Math.round(state.myHp));
+      document.getElementById('vsP1Rank').textContent = '圧倒的な勢い！';
+      document.getElementById('vsP2Score').textContent = 'HP 0';
+      document.getElementById('vsP2Rank').textContent = 'KO負け';
+      banner.textContent = '🥊 KO勝利！あなたの勢いが相手を沈黙させました！';
+      fanfare();
+      confettiBurst();
+    } else {
+      document.getElementById('vsP1Score').textContent = 'HP 0';
+      document.getElementById('vsP1Rank').textContent = 'KO負け';
+      document.getElementById('vsP2Score').textContent = '残りHP ' + Math.max(0, Math.round(state.oppHp));
+      document.getElementById('vsP2Rank').textContent = '圧倒的な勢い';
+      banner.textContent = '😭 KO負け…相手の勢いに押し切られました。';
+      beep(160, 0.3, 'sawtooth');
+    }
+    show('panel-vs-result');
+  }
+
+  function handleKnockout(iWon){
+    if(state.finished) return;
+    state.finished = true;
+    stopVoiceRecognition();
+    if(state.interruptTimer) clearTimeout(state.interruptTimer);
+    interruptBanner.classList.remove('show');
+    if(!iWon){
+      sendWS({type:'ko'});
+    }
+    setTimeout(function(){ showKoResult(iWon); }, 250);
+  }
+
+  function handleServerMessage(msg){
+    if(msg.type === 'room_created'){
+      state.roomCode = msg.code;
+      state.isHost = true;
+      roomCodeDisplayEl.textContent = msg.code;
+      onlineChoiceEl.style.display = 'none';
+      onlineWaitingEl.style.display = 'block';
+      waitingMsgEl.textContent = '相手の参加を待っています… このコードを対戦相手に伝えてください。';
+      return;
+    }
+    if(msg.type === 'joined'){
+      state.roomCode = msg.code;
+      state.isHost = false;
+      state.opponentName = msg.opponentName;
+      state.onlineSubMode = msg.subMode === 'score' ? 'score' : 'hp'; // ホストの選択に合わせる
+      roomCodeDisplayEl.textContent = msg.code;
+      onlineChoiceEl.style.display = 'none';
+      onlineWaitingEl.style.display = 'block';
+      startOnlineMatch();
+      return;
+    }
+    if(msg.type === 'opponent_joined'){
+      state.opponentName = msg.opponentName;
+      startOnlineMatch();
+      if(state.isHost){
+        setTimeout(startRtcAsHost, 800);
+      }
+      return;
+    }
+    if(msg.type === 'error'){
+      onlineStatusEl.textContent = msg.message;
+      return;
+    }
+    if(msg.type === 'opponent_progress'){
+      updateOpponentWidget(msg);
+      if(state.battleMode === 'online' && state.onlineSubMode === 'hp' && !state.finished){
+        if(msg.dealtDamage){
+          state.myHp = Math.max(0, state.myHp - msg.dealtDamage);
+          showDamageFloat(msg.dealtDamage, 'my');
+          if(msg.dealtDamage >= 1) beep(220, 0.06, 'square');
+        }
+        if(typeof msg.hp === 'number'){
+          state.oppHp = Math.max(0, Math.min(HP_MAX, msg.hp));
+        }
+        updateHpUI();
+        if(state.myHp <= 0){
+          handleKnockout(false);
+        }
+      }
+      return;
+    }
+    if(msg.type === 'opponent_ko'){
+      handleKnockout(true);
+      return;
+    }
+    if(msg.type === 'rtc_offer'){
+      handleRtcOffer(msg.sdp);
+      return;
+    }
+    if(msg.type === 'rtc_answer'){
+      handleRtcAnswer(msg.sdp);
+      return;
+    }
+    if(msg.type === 'rtc_ice'){
+      handleRtcIce(msg.candidate);
+      return;
+    }
+    if(msg.type === 'opponent_finished'){
+      state.opponentResult = msg.result;
+      if(!state.finished){
+        commentText.textContent = '相手が先に土下座を終えました！スコア' + msg.result.score + '点。負けられません！';
+      } else if(document.getElementById('panel-vs-result').classList.contains('active')){
+        showOnlineWaitingResult(state.myResult);
+      }
+      return;
+    }
+    if(msg.type === 'both_finished'){
+      var mine = state.isHost ? msg.host : msg.guest;
+      var opp = state.isHost ? msg.guest : msg.host;
+      var myName = state.isHost ? msg.hostName : msg.guestName;
+      var oppName = state.isHost ? msg.guestName : msg.hostName;
+      showOnlineResult(mine, opp, myName, oppName);
+      return;
+    }
+    if(msg.type === 'opponent_left'){
+      alert((state.opponentName || '相手') + 'さんが退出しました。ロビーに戻ります。');
+      if(ws){ ws.close(); ws = null; }
+      state.roomCode = null;
+      closePeerConnection();
+      backToSetupFromPlay();
+      return;
+    }
+  }
+
+  var onlineSubModeTabs = document.querySelectorAll('#onlineSubModeTabs .mode-tab');
+  onlineSubModeTabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      onlineSubModeTabs.forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      state.onlineSubMode = tab.getAttribute('data-submode');
+    });
+  });
+
+  document.getElementById('createRoomBtn').addEventListener('click', function(){
+    onlineStatusEl.textContent = 'サーバーに接続しています…';
+    connectWS(function(){ sendWS({type:'create_room', name: state.playerName, subMode: state.onlineSubMode}); });
+  });
+  document.getElementById('joinRoomBtn').addEventListener('click', function(){
+    var code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+    if(!code){ alert('ルームコードを入力してください'); return; }
+    onlineStatusEl.textContent = 'サーバーに接続しています…';
+    connectWS(function(){ sendWS({type:'join_room', code: code, name: state.playerName}); });
+  });
+  document.getElementById('copyCodeBtn').addEventListener('click', function(){
+    var code = roomCodeDisplayEl.textContent;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(code).then(function(){
+        this_ok();
+      }.bind(this), function(){});
+    }
+    function this_ok(){
+      var btn = document.getElementById('copyCodeBtn');
+      var old = btn.textContent;
+      btn.textContent = 'コピーしました！';
+      setTimeout(function(){ btn.textContent = old; }, 1200);
+    }
+  });
+  document.getElementById('onlineBackBtn').addEventListener('click', function(){
+    leaveOnlineRoom();
+    resetOnlineLobbyUI();
+    show('panel-setup');
+  });
+
+  function pickCommentary(){
+    if(state.finished) return;
+    if(!document.getElementById('panel-bow').classList.contains('active')) return;
+    if(state.interruptActive) return;
+    if(Math.random() < 0.22){
+      commentText.textContent = ambientLines[Math.floor(Math.random()*ambientLines.length)];
+      return;
+    }
+    var tier = comments[comments.length-1];
+    for(var i=0;i<comments.length;i++){
+      if(state.angle <= comments[i].max){ tier = comments[i]; break; }
+    }
+    commentText.textContent = tier.lines[Math.floor(Math.random()*tier.lines.length)];
+  }
+  setInterval(pickCommentary, 1900);
+
+  /* ---------- BGM ---------- */
+  (function(){
+    var bgm = document.getElementById('bgmAudio');
+    var btn = document.getElementById('bgmToggle');
+    if(!bgm || !btn) return;
+    bgm.volume = 0.35;
+    var muted = true; // アプリを開いた直後は必ず音無しスタート（前回の選択は記憶しない）
+    function applyMuteState(){
+      bgm.muted = muted;
+      btn.textContent = muted ? '🔇' : '🔊';
+      btn.classList.toggle('muted', muted);
+    }
+    applyMuteState();
+
+    function tryPlay(){
+      if(muted) return;
+      var p = bgm.play();
+      if(p && p.catch) p.catch(function(){ /* 自動再生ブロック時は次の操作で再試行 */ });
+    }
+    // ブラウザの自動再生制限のため、最初のユーザー操作でBGMを開始する
+    var started = false;
+    function startOnFirstGesture(){
+      if(started) return;
+      started = true;
+      tryPlay();
+      document.removeEventListener('click', startOnFirstGesture);
+      document.removeEventListener('keydown', startOnFirstGesture);
+      document.removeEventListener('touchstart', startOnFirstGesture);
+    }
+    document.addEventListener('click', startOnFirstGesture);
+    document.addEventListener('keydown', startOnFirstGesture);
+    document.addEventListener('touchstart', startOnFirstGesture);
+
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      muted = !muted;
+      applyMuteState();
+      if(!muted) tryPlay();
+    });
+  })();
+
+  setInterval(tick, 50);
+  updateRoundBanner();
+  updateVisual();
+  pickCommentary();
+})();
+</script>
+</body>
+</html>
